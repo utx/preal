@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--page-->
+<title>Passing Partners</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: one narrow column, like a touchline. Green header band, a striped pitch panel
+   where the numbered shirts stand, chunky kit-yellow buttons underneath. */
+:root {
+  --bg: #f1f5ea;          /* chalk */
+  --card: #ffffff;
+  --ink: #14233a;         /* navy kit ink */
+  --muted: #566376;
+  --line: #d5ddcc;
+  --pitch: #1f8052;
+  --pitch-deep: #1a6f47;
+  --on-pitch: #ffffff;
+  --pitch-line: rgba(255,255,255,.5);
+  --kit: #ffc82e;         /* shirt and button yellow */
+  --kit-deep: #d69b00;
+  --kit-ink: #14233a;
+  --good: #17693f;
+  --good-bg: #dcf1e3;
+  --foul: #b3262e;
+  --foul-bg: #fbe1e2;
+  --info-bg: #e6ecf5;
+  --display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  --body: "Nunito", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1814; --card: #17261f; --ink: #edf4e8; --muted: #a0b2a6; --line: #2c4034;
+    --pitch: #23895a; --pitch-deep: #1b6d47; --on-pitch: #ffffff; --pitch-line: rgba(255,255,255,.45);
+    --kit: #ffd044; --kit-deep: #b98600; --kit-ink: #14233a;
+    --good: #7fe0a6; --good-bg: #173a27; --foul: #ff9a9e; --foul-bg: #46191c; --info-bg: #1d2c3d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1814; --card: #17261f; --ink: #edf4e8; --muted: #a0b2a6; --line: #2c4034;
+  --pitch: #23895a; --pitch-deep: #1b6d47; --on-pitch: #ffffff; --pitch-line: rgba(255,255,255,.45);
+  --kit: #ffd044; --kit-deep: #b98600; --kit-ink: #14233a;
+  --good: #7fe0a6; --good-bg: #173a27; --foul: #ff9a9e; --foul-bg: #46191c; --info-bg: #1d2c3d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.45; font-weight: 500; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.band { background: var(--pitch); color: var(--on-pitch); }
+.band-in, .wrap { max-width: 620px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band-in { padding-block: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand small { font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; opacity: .85; }
+.brand b { font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1.1; }
+.steps { display: flex; align-items: center; gap: 10px; }
+.steps span.name { font-weight: 800; font-size: 14px; }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--on-pitch); opacity: .55; }
+.dots i.done { background: var(--kit); border-color: var(--kit); opacity: 1; }
+.dots i.now { opacity: 1; background: var(--on-pitch); }
+
+.wrap { padding-block: 18px 32px; display: flex; flex-direction: column; gap: 16px; }
+#stage { display: flex; flex-direction: column; gap: 16px; }
+h1, h2 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; line-height: 1.1; }
+h1 { font-size: clamp(38px, 10vw, 56px); }
+h2 { font-size: 26px; }
+p { margin: 0; }
+.prompt { font-size: 20px; font-weight: 700; text-wrap: balance; }
+.prompt b { font-family: var(--display); font-weight: 400; font-size: 1.15em; }
+.muted { color: var(--muted); font-size: 15px; }
+
+.pitch { position: relative; border-radius: 20px; padding: 28px 14px; color: var(--on-pitch);
+  background: repeating-linear-gradient(90deg, var(--pitch) 0 52px, var(--pitch-deep) 52px 104px); }
+.pitch::before { content: ""; position: absolute; inset: 9px; border: 2px solid var(--pitch-line); border-radius: 12px; pointer-events: none; }
+.pitch .caption { text-align: center; font-weight: 700; margin-top: 14px; position: relative; }
+.row { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.op { font-family: var(--display); font-size: 30px; }
+.big-eq { font-family: var(--display); font-size: clamp(30px, 8vw, 44px); text-align: center; position: relative; }
+
+.shirt { width: clamp(64px, 19vw, 104px); padding: 0; border: 0; background: none; display: block; transition: transform .15s; }
+.shirt svg { display: block; width: 100%; height: auto; overflow: visible; }
+.shirt .jersey { fill: var(--kit); stroke: var(--kit-ink); stroke-width: 3; stroke-linejoin: round; }
+.shirt .num { fill: var(--kit-ink); font-family: var(--display); font-size: 34px; }
+.shirt .num.sm { font-size: 26px; }
+button.shirt:hover { transform: translateY(-3px); }
+.shirt.sel { transform: translateY(-10px) scale(1.06); }
+.shirt.sel .jersey { stroke-width: 6; stroke: var(--on-pitch); }
+.shirt.glow .jersey { stroke: var(--on-pitch); stroke-width: 6; stroke-dasharray: 8 6; }
+.shirt.team .jersey { fill: var(--on-pitch); }
+.shirt.team { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+.shirt.ghost .jersey { fill: none; stroke: var(--on-pitch); stroke-dasharray: 7 6; }
+.shirt.ghost .num { fill: var(--on-pitch); }
+.slide { animation: slide .5s ease; }
+@keyframes pop { from { transform: scale(.4); } to { transform: scale(1); } }
+@keyframes slide { from { transform: translateX(40px); opacity: .3; } to { transform: none; opacity: 1; } }
+@keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+
+.balls { position: relative; display: grid; gap: 10px; justify-content: center; font-size: 28px; }
+.balls div { display: flex; align-items: center; gap: 12px; }
+.balls span { letter-spacing: 2px; }
+
+.btn { border: 0; border-radius: 16px; padding: 14px 22px; min-height: 54px; background: var(--kit); color: var(--kit-ink);
+  font-family: var(--display); font-size: 22px; box-shadow: 0 5px 0 var(--kit-deep); transition: transform .08s, box-shadow .08s; }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--kit-deep); }
+.btn.quiet { background: var(--card); color: var(--ink); box-shadow: 0 0 0 2px var(--line) inset; font-family: var(--body); font-weight: 800; font-size: 17px; }
+.btn.quiet:active { transform: none; box-shadow: 0 0 0 2px var(--ink) inset; }
+.btn:disabled { opacity: .45; cursor: default; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.actions .btn { flex: 1 1 160px; }
+.pips { letter-spacing: 3px; margin-left: 6px; }
+
+.opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.opt { border: 2px solid var(--line); background: var(--card); border-radius: 16px; min-height: 68px; font-family: var(--display); font-size: 30px; }
+.opt:disabled { opacity: .35; }
+.opt.right { background: var(--good-bg); border-color: var(--good); color: var(--good); opacity: 1; }
+.opt.wrong { animation: shake .35s; }
+
+.fb { border-radius: 14px; padding: 12px 16px; font-weight: 700; min-height: 0; }
+.fb:empty { display: none; }
+.fb.good { background: var(--good-bg); color: var(--good); }
+.fb.bad { background: var(--foul-bg); color: var(--foul); }
+.fb.info { background: var(--info-bg); color: var(--ink); }
+
+.pad { display: grid; gap: 10px; }
+.display { background: var(--card); border: 2px solid var(--line); border-radius: 16px; min-height: 64px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-size: 38px; font-variant-numeric: tabular-nums; }
+.display.empty { color: var(--muted); }
+.display.wrong { animation: shake .35s; border-color: var(--foul); }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.key { border: 2px solid var(--line); background: var(--card); border-radius: 14px; min-height: 54px; font-family: var(--display); font-size: 26px; }
+.key:active { background: var(--info-bg); }
+.key.go { background: var(--kit); color: var(--kit-ink); border-color: var(--kit-deep); font-size: 20px; }
+
+.track { display: flex; align-items: center; gap: 8px; }
+.lane { position: relative; flex: 1; height: 34px; border-radius: 17px; background: var(--card); border: 2px solid var(--line);
+  background-image: repeating-linear-gradient(90deg, transparent 0 calc(100% / 6 - 2px), var(--line) calc(100% / 6 - 2px) calc(100% / 6)); }
+.ball { position: absolute; top: 1px; left: calc(var(--p) / 6 * (100% - 30px)); font-size: 24px; line-height: 28px; width: 30px; text-align: center; transition: left .6s cubic-bezier(.3,1.3,.5,1); }
+.net { width: 40px; height: 40px; border: 3px solid var(--ink); border-left-width: 5px; border-radius: 4px;
+  background-image: repeating-linear-gradient(0deg, transparent 0 6px, var(--line) 6px 8px), repeating-linear-gradient(90deg, transparent 0 6px, var(--line) 6px 8px); }
+.net.hit { animation: shake .5s; background-color: var(--kit); }
+.level { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+.lines { display: grid; gap: 10px; }
+.linebtn { text-align: left; border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 14px 16px; font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.linebtn.ok { opacity: .5; }
+.linebtn.caught { background: var(--foul-bg); border-color: var(--foul); color: var(--foul); }
+.linebtn.wrong { animation: shake .35s; }
+.who { display: flex; gap: 12px; align-items: center; }
+.avatar { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--kit); color: var(--kit-ink); display: grid; place-items: center; font-family: var(--display); font-size: 24px; border: 3px solid var(--kit-ink); }
+
+.goal { text-align: center; display: grid; gap: 8px; }
+.goal h1 { color: var(--on-pitch); animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+.trick { border-radius: 22px; padding: 26px 20px; text-align: center; display: grid; gap: 12px; min-height: 250px; align-content: center;
+  background: var(--kit); color: var(--kit-ink); border: 4px solid var(--kit-ink); width: 100%; font-family: var(--body); }
+.trick .tag { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.trick h2 { font-size: 34px; }
+.trick .eg { font-family: var(--display); font-size: 22px; }
+.trick.back { background: var(--card); color: var(--ink); border-color: var(--ink); text-align: left; }
+.trick.back p { font-size: 17px; }
+.stars { font-size: 44px; letter-spacing: 6px; text-align: center; color: var(--kit-deep); font-family: var(--display); }
+.stars .off { color: var(--line); }
+.home { display: grid; gap: 16px; }
+.grown { border-top: 2px solid var(--line); padding-top: 12px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<!--/page-->
+</head>
+<body>
+<!--page-->
+<header class="band">
+  <div class="band-in">
+    <div class="brand"><small>Pre-season training · Stop 1</small><b>Passing Partners</b></div>
+    <div class="steps" id="steps" hidden><span class="name" id="stageName"></span><span class="dots" id="dots"></span></div>
+  </div>
+</header>
+<main class="wrap">
+  <div id="stage"></div>
+  <div class="fb" id="fb" role="status" aria-live="polite"></div>
+  <div id="after" class="actions"></div>
+</main>
+
+<script>
+(function () {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const stageEl = $('#stage'), fb = $('#fb'), after = $('#after');
+  const STAGES = ['Warm-up', 'Have a go', "Coach's replay", 'Drills', 'Spot the foul', 'Trick card'];
+  const GOALS = 6;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = a => a[rnd(0, a.length - 1)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  let S = {}, keyTarget = null;
+
+  function say(msg, kind) { fb.className = 'fb ' + (kind || 'info'); fb.textContent = msg || ''; }
+  function nextBtn(label, fn, quiet) {
+    const b = document.createElement('button');
+    b.className = 'btn' + (quiet ? ' quiet' : ''); b.textContent = label; b.onclick = fn;
+    after.appendChild(b); return b;
+  }
+  function clear() { stageEl.innerHTML = ''; after.innerHTML = ''; say(''); keyTarget = null; }
+  function shirt(n, cls, i) {
+    const svg = '<svg viewBox="0 0 100 92" aria-hidden="true"><path class="jersey" d="M30 5 10 17 1 40 18 48 23 37V88H77V37L82 48 99 40 90 17 70 5Q50 21 30 5Z"/>' +
+      '<text class="num' + (String(n).length > 2 ? ' sm' : '') + '" x="50" y="66" text-anchor="middle">' + n + '</text></svg>';
+    return i === undefined
+      ? '<div class="shirt ' + (cls || '') + '" role="img" aria-label="' + n + '">' + svg + '</div>'
+      : '<button class="shirt ' + (cls || '') + '" data-i="' + i + '" aria-label="Shirt ' + n + '">' + svg + '</button>';
+  }
+  const plus = '<span class="op">+</span>';
+
+  /* ---------- number pad ---------- */
+  function numpad(onCheck) {
+    const el = document.createElement('div'); el.className = 'pad';
+    el.innerHTML = '<div class="display empty" id="answerBox">?</div><div class="keys">' +
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => '<button class="key" data-k="' + d + '">' + d + '</button>').join('') +
+      '<button class="key" data-k="back" aria-label="Rub out">⌫</button><button class="key" data-k="0">0</button><button class="key go" data-k="ok">Check</button></div>';
+    let v = ''; const box = $('.display', el);
+    const show = () => { box.textContent = v || '?'; box.classList.toggle('empty', !v); };
+    const api = { reset() { v = ''; show(); box.classList.remove('wrong'); void box.offsetWidth; box.classList.add('wrong'); } };
+    const press = k => {
+      if (k === 'back') v = v.slice(0, -1);
+      else if (k === 'ok') { if (v) onCheck(+v, api); return; }
+      else if (v.length < 4) v += k;
+      box.classList.remove('wrong'); show();
+    };
+    el.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) press(b.dataset.k); });
+    keyTarget = press; return el;
+  }
+  document.addEventListener('keydown', e => {
+    if (!keyTarget) return;
+    if (/^[0-9]$/.test(e.key)) keyTarget(e.key);
+    else if (e.key === 'Backspace') keyTarget('back');
+    else if (e.key === 'Enter' && (e.target.tagName !== 'BUTTON' || e.target.classList.contains('key'))) { e.preventDefault(); keyTarget('ok'); }
+  });
+
+  /* ---------- question generators ---------- */
+  // Returns { nums: [...], pairs: n }. Exactly the intended pairs add to a round number.
+  function gen(level) {
+    const lastOk = (n, banned) => !banned.includes(n % 10);
+    if (level === 3) {
+      for (;;) {
+        const a = rnd(11, 89); const d = a % 10; if (d === 0 || d === 5) continue;
+        const t = pick([50, 60, 70, 80, 90]); const c = rnd(11, t - 11);
+        if (!lastOk(c, [0, 5, d, 10 - d])) continue;
+        const nums = [a, 100 - a, c, t - c];
+        if (new Set(nums).size < 4) continue;
+        return { nums: shuffle(nums), pairs: 1 + 1 };
+      }
+    }
+    let a, b, c;
+    for (;;) {
+      if (level === 1) { const t = pick([20, 30, 40, 50]); a = rnd(2, t - 2); b = t - a; c = rnd(11, 49); }
+      else if (level === 2) { a = rnd(11, 89); b = 100 - a; c = rnd(12, 89); }
+      else { a = rnd(1, 8) * 100 + rnd(11, 89); b = 100 - (a % 100); c = rnd(111, 499); }
+      const d = a % 10;
+      if (d === 0 || !lastOk(c, [0, d, 10 - d]) || c === a || c === b) continue;
+      break;
+    }
+    // Usually keep the partners apart, so there is a reason to swap.
+    const nums = Math.random() < 0.7 ? (Math.random() < 0.5 ? [a, c, b] : [b, c, a]) : shuffle([a, b, c]);
+    return { nums, pairs: 1, a, b, c };
+  }
+  function splitHint(m, t) {
+    const h = t - (t % 100), r = t % 100;
+    if (h && r) return m + ' + ' + h + ' = ' + (m + h) + ', then add ' + r + '.';
+    if (t > 10 && t % 10) return m + ' + ' + (t - t % 10) + ' = ' + (m + t - t % 10) + ', then add ' + (t % 10) + '.';
+    return 'Start at ' + m + ' and count on in tens.';
+  }
+
+  /* ---------- flow ---------- */
+  function setStage(i) {
+    S.stage = i; clear();
+    $('#steps').hidden = i < 0;
+    if (i >= 0) {
+      $('#stageName').textContent = STAGES[i];
+      $('#dots').innerHTML = STAGES.map((_, k) => '<i class="' + (k < i ? 'done' : k === i ? 'now' : '') + '"></i>').join('');
+    }
+    [warmup, kickabout, replay, drills, foul, card][i]();
+    window.scrollTo(0, 0);
+  }
+  function best() { try { return +localStorage.getItem('pp-stop1-stars') || 0; } catch (e) { return 0; } }
+  function starRow(n) { return '<div class="stars" aria-label="' + n + ' out of 3 stars">' + [1, 2, 3].map(k => '<span class="' + (k <= n ? '' : 'off') + '">★</span>').join('') + '</div>'; }
+
+  function home() {
+    S = { stage: -1 }; clear(); $('#steps').hidden = true;
+    const b = best();
+    stageEl.innerHTML = '<div class="home"><h1>Find the partners. Finish the sum.</h1>' +
+      '<div class="pitch"><div class="row">' + shirt(48) + plus + shirt(37) + plus + shirt(52) + '</div>' +
+      '<p class="caption">Two of these shirts make a perfect pass. Can you spot them?</p></div>' +
+      '<p class="prompt">Today Coach Mo shows you a move that turns long sums into easy ones.</p>' +
+      (b ? '<div>' + starRow(b) + '<p class="muted" style="text-align:center">Your best so far</p></div>' : '') + '</div>';
+    nextBtn(b ? 'Train again' : 'Kick off', () => { S = { clean: 0, foulClean: 0 }; setStage(0); });
+    const g = document.createElement('p'); g.className = 'muted grown';
+    g.textContent = 'For grown-ups: about 10 minutes, no timer. The skill is reordering and regrouping an addition so that two numbers make a round number first.';
+    stageEl.firstChild.appendChild(g);
+  }
+
+  /* ---------- 1. warm-up ---------- */
+  function warmup() {
+    const mk = (total, kind) => {
+      const a = kind === 'ones' ? rnd(1, 9) : kind === 'tens' ? rnd(1, 9) * 10 : rnd(1, 8) * 10 + rnd(1, 9);
+      const ans = total - a, opts = new Set([ans]);
+      const cands = kind === 'ones' ? [ans + 1, ans - 1, ans + 2, a] : kind === 'tens' ? [ans + 10, ans - 10, ans + 20, a] : [ans + 10, ans - 10, ans + 1, ans - 1];
+      shuffle(cands).forEach(c => { if (opts.size < 4 && c > 0 && c < total && c !== ans) opts.add(c); });
+      for (let x = 2; opts.size < 4; x++) if (ans + x < total) opts.add(ans + x); else opts.add(Math.max(1, ans - x));
+      return { a, total, ans, opts: shuffle([...opts]) };
+    };
+    const qs = [mk(10, 'ones'), mk(100, 'tens'), mk(100, 'any')]; let qi = 0;
+    const ask = () => {
+      clear(); const q = qs[qi];
+      stageEl.innerHTML = '<p class="muted">Warm-up ' + (qi + 1) + ' of 3</p><p class="prompt">Which number teams up with <b>' + q.a + '</b> to make <b>' + q.total + '</b>?</p>' +
+        '<div class="pitch"><div class="row">' + shirt(q.a) + plus + shirt('?', 'ghost') + '<span class="op">=</span><span class="big-eq">' + q.total + '</span></div></div>' +
+        '<div class="opts">' + q.opts.map(o => '<button class="opt" data-v="' + o + '">' + o + '</button>').join('') + '</div>';
+      $('.opts').onclick = e => {
+        const b = e.target.closest('.opt'); if (!b || b.disabled) return; const v = +b.dataset.v;
+        if (v === q.ans) {
+          b.classList.add('right'); stageEl.querySelectorAll('.opt').forEach(o => o.disabled = true);
+          say(q.a + ' + ' + q.ans + ' = ' + q.total + '. Spot on!', 'good');
+          nextBtn(qi < 2 ? 'Next' : 'On to the pitch', () => { qi++; qi < 3 ? ask() : setStage(1); });
+        } else {
+          b.classList.add('wrong'); b.disabled = true;
+          say(q.a + ' + ' + v + ' = ' + (q.a + v) + '. That is not ' + q.total + '. Have another go.', 'bad');
+        }
+      };
+    };
+    ask();
+  }
+
+  /* ---------- 2. have a go ---------- */
+  function kickabout() {
+    const g = gen(2); S.kick = { a: g.a, b: g.b, c: g.c }; const ans = g.a + g.b + g.c;
+    stageEl.innerHTML = '<p class="prompt">Have a go at this one. Any way you like.</p>' +
+      '<div class="pitch"><div class="row">' + shirt(g.a) + plus + shirt(g.c) + plus + shirt(g.b) + '</div></div>';
+    const done = msg => {
+      say(msg, 'info'); const p = $('.pad'); if (p) p.remove(); after.innerHTML = ''; keyTarget = null;
+      nextBtn("Watch Coach Mo's replay", () => setStage(2));
+    };
+    stageEl.appendChild(numpad(v => done(v === ans
+      ? 'Yes, it is ' + ans + '! Was that hard work? Coach Mo knows a quicker way.'
+      : 'Good try. It is ' + ans + ', and it is a slog the long way. Coach Mo knows a quicker way.')));
+    nextBtn('Too tricky? Show me', () => done('No problem. That one is a slog the long way. Coach Mo knows a quicker way.'), true);
+  }
+
+  /* ---------- 3. coach's replay ---------- */
+  function replay() {
+    const { a, b, c } = S.kick, d = a % 10;
+    const steps = [
+      ['<div class="row">' + shirt(a) + plus + shirt(c) + plus + shirt(b) + '</div>',
+        'Left to right is hard work. First ' + a + ' + ' + c + ' = ' + (a + c) + ', and then you still have to add ' + b + '.'],
+      ['<div class="balls"><div><span>⚽⚽⚽</span>+<span>⚽⚽</span>= 5</div><div><span>⚽⚽</span>+<span>⚽⚽⚽</span>= 5</div></div>',
+        'Here is the secret. Swap the groups and you still have the same balls. You can add in any order.'],
+      ['<div class="row">' + shirt(a, 'glow') + plus + shirt(b, 'glow slide') + plus + shirt(c, 'slide') + '</div>',
+        'So let ' + a + ' and ' + b + ' stand together. Look at their last digits: ' + d + ' + ' + (10 - d) + ' = 10.'],
+      ['<div class="row">' + shirt(100, 'team') + plus + shirt(c) + '</div>',
+        a + ' + ' + b + ' = 100. A round number! They are passing partners.'],
+      ['<div class="big-eq">100 + ' + c + ' = ' + (100 + c) + '</div>',
+        'Now the finish is easy. Same answer, much less work.']
+    ];
+    let i = 0;
+    const show = () => {
+      clear();
+      stageEl.innerHTML = '<div class="who"><span class="avatar" aria-hidden="true">M</span><p class="prompt">Coach Mo: “Watch this.”</p></div>' +
+        '<div class="pitch">' + steps[i][0] + '<p class="caption">' + steps[i][1] + '</p></div><p class="muted">Replay ' + (i + 1) + ' of ' + steps.length + '</p>';
+      if (i > 0) nextBtn('Back', () => { i--; show(); }, true);
+      nextBtn(i < steps.length - 1 ? 'Next' : 'My turn!', () => { i++; i < steps.length ? show() : setStage(3); });
+    };
+    show();
+  }
+
+  /* ---------- 4. drills ---------- */
+  function drills() {
+    const D = S.drill = { level: 1, streak: 0, done: 0 };
+    let q;
+    const frame = () => {
+      clear();
+      stageEl.innerHTML = '<div class="track" role="img" aria-label="' + D.done + ' of ' + GOALS + ' finishes"><div class="lane"><span class="ball" style="--p:' + D.done + '">⚽</span></div><div class="net"></div></div>' +
+        '<p class="level">Level ' + D.level + ' · ' + D.done + ' of ' + GOALS + '</p><p class="prompt" id="prompt"></p>' +
+        '<div class="pitch"><div class="row" id="shirts"></div></div><div id="work"></div>';
+    };
+    const drawShirts = () => {
+      $('#shirts').innerHTML = q.items.map((it, i) => {
+        const cls = (it.team ? 'team ' : '') + (q.sel.includes(i) ? 'sel ' : '') + (q.glow.includes(it.v) && !it.team ? 'glow' : '');
+        return shirt(it.v, cls, q.phase === 'A' && !it.team ? i : undefined);
+      }).join(plus);
+    };
+    const tipBtn = () => {
+      after.innerHTML = '';
+      const left = 3 - q.tips, canB = q.phase === 'B' && q.tipsB >= 2;
+      const b = nextBtn('Coach tip', tip, true);
+      b.insertAdjacentHTML('beforeend', '<span class="pips" aria-label="' + left + ' left">' + '●'.repeat(left) + '○'.repeat(3 - left) + '</span>');
+      b.disabled = left <= 0 || canB;
+    };
+    const partners = () => {
+      const free = q.items.filter(it => !it.team).map(it => it.v);
+      for (let i = 0; i < free.length; i++) for (let j = i + 1; j < free.length; j++) if ((free[i] + free[j]) % 10 === 0) return [free[i], free[j]];
+      return [];
+    };
+    function tip() {
+      q.tips++;
+      if (q.phase === 'A') {
+        q.tipsA++; const p = partners();
+        if (q.tipsA === 1) say('Look at the last digits. Which two add up to 10?', 'info');
+        else if (q.tipsA === 2) { q.glow = [p[0]]; say('This shirt has a partner. Its last digit is ' + (p[0] % 10) + '. What goes with ' + (p[0] % 10) + ' to make 10?', 'info'); }
+        else { q.glow = p; say(p[0] + ' and ' + p[1] + ' team up. Tap them both.', 'info'); }
+        drawShirts();
+      } else {
+        q.tipsB++;
+        say(q.tipsB === 1 ? 'Start with the round number. Add the big part of the other number first, then the small part.' : splitHint(q.m, q.t), 'info');
+      }
+      tipBtn();
+    }
+    const ask = () => {
+      const g = gen(D.level);
+      q = { items: g.nums.map(v => ({ v })), pairs: g.pairs, phase: 'A', sel: [], glow: [], tips: 0, tipsA: 0, tipsB: 0, slips: 0, bWrong: 0, total: g.nums.reduce((x, y) => x + y, 0) };
+      frame();
+      $('#prompt').textContent = q.pairs > 1 ? 'Tap two shirts that make a round number. There are two pairs!' : 'Tap the two passing partners. They make a round number.';
+      drawShirts(); tipBtn();
+      $('#shirts').onclick = e => {
+        const b = e.target.closest('button.shirt'); if (!b || q.phase !== 'A') return; const i = +b.dataset.i;
+        if (q.sel.includes(i)) q.sel = q.sel.filter(x => x !== i); else q.sel.push(i);
+        if (q.sel.length === 2) {
+          const [x, y] = q.sel.map(k => q.items[k].v); q.sel = [];
+          if ((x + y) % 10 === 0) {
+            const rest = q.items.filter(it => it.v !== x && it.v !== y || it.team);
+            const teams = rest.filter(it => it.team), others = rest.filter(it => !it.team);
+            q.items = teams.concat([{ v: x + y, team: true }], others); q.pairs--; q.glow = [];
+            say(x + ' + ' + y + ' = ' + (x + y) + '. Great pass!', 'good');
+            if (q.pairs === 0) return phaseB();
+            $('#prompt').textContent = 'One more pair to find.';
+          } else { q.slips++; say(x + ' + ' + y + ' = ' + (x + y) + '. That is not a round number. Check the last digits.', 'bad'); }
+        }
+        drawShirts();
+      };
+    };
+    function phaseB() {
+      q.phase = 'B'; q.m = q.items[0].v; q.t = q.items[1].v;
+      drawShirts(); tipBtn();
+      $('#prompt').innerHTML = 'Now finish it off: <b>' + q.m + ' + ' + q.t + '</b>';
+      $('#work').appendChild(numpad((v, pad) => {
+        if (v === q.total) return finish(true);
+        q.bWrong++;
+        if (q.bWrong >= 2) return finish(false);
+        pad.reset(); say('Not quite. Try ' + q.m + ' + ' + q.t + ' once more.', 'bad');
+      }));
+    }
+    function finish(ok) {
+      keyTarget = null; $('#work').innerHTML = ''; after.innerHTML = '';
+      if (!ok) {
+        D.streak = 0; D.level = Math.max(1, D.level - 1);
+        $('#prompt').innerHTML = '<b>' + q.m + ' + ' + q.t + ' = ' + q.total + '</b>';
+        say('It is ' + q.total + '. ' + splitHint(q.m, q.t) + ' Let’s try another one.', 'info');
+        return nextBtn('Try another', ask);
+      }
+      const clean = !q.tips && !q.slips && !q.bWrong; let up = false;
+      D.done++; if (clean) { S.clean++; D.streak++; } else D.streak = 0;
+      if (D.level < 4 && D.streak >= (D.level === 1 ? 1 : 2)) { D.level++; D.streak = 0; up = true; }
+      $('.ball').style.setProperty('--p', D.done);
+      $('#prompt').innerHTML = '<b>' + q.m + ' + ' + q.t + ' = ' + q.total + '</b>';
+      if (D.done >= GOALS) { $('.net').classList.add('hit'); return setTimeout(goal, 700); }
+      say(pick(['Lovely finish!', 'Back of the net!', 'Sharp work!']) + (up ? ' Level up. Bigger numbers next.' : ''), 'good');
+      nextBtn('Next ball', ask);
+    }
+    function goal() {
+      clear();
+      stageEl.innerHTML = '<div class="pitch goal"><h1>GOAL!</h1><p class="caption">' + GOALS + ' sums finished. ' + S.clean + ' with no tips and no slips.</p></div>';
+      nextBtn('Next: spot the foul', () => setStage(4));
+    }
+    ask();
+  }
+
+  /* ---------- 5. spot the foul ---------- */
+  function foul() {
+    const kinds = shuffle(['bond', 'changed', 'dropped']).slice(0, 2); let r = 0;
+    const round = () => {
+      clear(); const g = gen(2), a = g.a, b = g.b, c = g.c, kind = kinds[r]; let lines, bad, why;
+      const swap = 'Swap the order: ' + a + ' + ' + b + ' + ' + c;
+      if (kind === 'bond') {
+        const w = 100 + pick([-10, 10]);
+        lines = [swap, a + ' + ' + b + ' = ' + w, w + ' + ' + c + ' = ' + (w + c)]; bad = 1;
+        why = a + ' + ' + b + ' is 100, not ' + w + '. Always check the tens as well as the last digits.';
+      } else if (kind === 'changed') {
+        const rev = +String(c).split('').reverse().join(''), c2 = rev !== c ? rev : c + 10;
+        lines = ['Swap the order: ' + a + ' + ' + b + ' + ' + c2, a + ' + ' + b + ' = 100', '100 + ' + c2 + ' = ' + (100 + c2)]; bad = 0;
+        why = c + ' turned into ' + c2 + '! When you swap the order, every number has to stay the same.';
+      } else {
+        lines = [swap, a + ' + ' + b + ' = 100', 'So the answer is 100']; bad = 2;
+        why = 'Dash forgot about ' + c + '. The answer is 100 + ' + c + ' = ' + (100 + c) + '.';
+      }
+      const fine = ['Swapping the order is allowed, and all three numbers are still there.', a + ' + ' + b + ' really is 100.', 'That adding is right. The slip happened earlier.'];
+      let first = true;
+      stageEl.innerHTML = '<p class="muted">Foul ' + (r + 1) + ' of 2</p><div class="who"><span class="avatar" aria-hidden="true">D</span>' +
+        '<p class="prompt">Dash is adding <b>' + a + ' + ' + c + ' + ' + b + '</b>. One line has a foul. Tap it to blow the whistle!</p></div>' +
+        '<div class="lines">' + lines.map((l, i) => '<button class="linebtn" data-i="' + i + '">' + l + '</button>').join('') + '</div>';
+      $('.lines').onclick = e => {
+        const btn = e.target.closest('.linebtn'); if (!btn || btn.disabled) return; const i = +btn.dataset.i;
+        if (i === bad) {
+          btn.classList.add('caught'); stageEl.querySelectorAll('.linebtn').forEach(x => x.disabled = true);
+          if (first) S.foulClean++;
+          say('Good whistle! ' + why, 'good');
+          nextBtn(r < 1 ? 'Next foul' : 'Collect your trick card', () => { r++; r < 2 ? round() : setStage(5); });
+        } else { first = false; btn.classList.add('ok', 'wrong'); btn.disabled = true; say('No foul there. ' + fine[i] + ' Look again.', 'bad'); }
+      };
+    };
+    round();
+  }
+
+  /* ---------- 6. trick card ---------- */
+  function card() {
+    const stars = S.clean >= 5 && S.foulClean === 2 ? 3 : S.clean >= 3 ? 2 : 1;
+    try { if (stars > best()) localStorage.setItem('pp-stop1-stars', stars); } catch (e) {}
+    let back = false;
+    const front = '<span class="tag">Trick card 1</span><h2>Passing Partners</h2><p class="eg">48 + 37 + 52<br>= (48 + 52) + 37<br>= 100 + 37</p><p>Find two numbers that make a round number. Add them first.</p><span class="tag">Tap to flip</span>';
+    const rear = '<span class="tag">The pro names</span><p><b>Commutative:</b> you can swap the order. 3 + 5 is the same as 5 + 3.</p><p><b>Associative:</b> you can choose which pair to add first.</p><p>Both work for adding. They do not work for taking away. More on that at a later stop.</p><span class="tag">Tap to flip back</span>';
+    stageEl.innerHTML = starRow(stars) + '<p class="prompt" style="text-align:center">' + S.clean + ' of ' + GOALS + ' finishes with no tips and no slips. ' + S.foulClean + ' of 2 fouls caught first time.</p>' +
+      '<button class="trick" id="trick">' + front + '</button>';
+    $('#trick').onclick = function () { back = !back; this.classList.toggle('back', back); this.innerHTML = back ? rear : front; };
+    say('You earned a trick card. Use this move whenever a sum looks long.', 'good');
+    nextBtn('Train again', home);
+  }
+
+  home();
+})();
+</script>
+<!--/page-->
+</body>
+</html>
