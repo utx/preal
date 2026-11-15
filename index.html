@@ -139,8 +139,8 @@ button.shirt:hover { transform: translateY(-3px); }
 
 .track { display: flex; align-items: center; gap: 8px; }
 .lane { position: relative; flex: 1; height: 34px; border-radius: 17px; background: var(--card); border: 2px solid var(--line);
-  background-image: repeating-linear-gradient(90deg, transparent 0 calc(100% / 6 - 2px), var(--line) calc(100% / 6 - 2px) calc(100% / 6)); }
-.ball { position: absolute; top: 1px; left: calc(var(--p) / 6 * (100% - 30px)); font-size: 24px; line-height: 28px; width: 30px; text-align: center; transition: left .6s cubic-bezier(.3,1.3,.5,1); }
+  background-image: repeating-linear-gradient(90deg, transparent 0 calc(100% / 4 - 2px), var(--line) calc(100% / 4 - 2px) calc(100% / 4)); }
+.ball { position: absolute; top: 1px; left: calc(var(--p) / 4 * (100% - 30px)); font-size: 24px; line-height: 28px; width: 30px; text-align: center; transition: left .6s cubic-bezier(.3,1.3,.5,1); }
 .net { width: 40px; height: 40px; border: 3px solid var(--ink); border-left-width: 5px; border-radius: 4px;
   background-image: repeating-linear-gradient(0deg, transparent 0 6px, var(--line) 6px 8px), repeating-linear-gradient(90deg, transparent 0 6px, var(--line) 6px 8px); }
 .net.hit { animation: shake .5s; background-color: var(--kit); }
@@ -190,7 +190,7 @@ button.shirt:hover { transform: translateY(-3px); }
   const $ = (s, r) => (r || document).querySelector(s);
   const stageEl = $('#stage'), fb = $('#fb'), after = $('#after');
   const STAGES = ['Warm-up', 'Have a go', "Coach's replay", 'Drills', 'Spot the foul', 'Trick card'];
-  const GOALS = 6;
+  const GOALS = 4;
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const pick = a => a[rnd(0, a.length - 1)];
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -295,7 +295,7 @@ button.shirt:hover { transform: translateY(-3px); }
       (b ? '<div>' + starRow(b) + '<p class="muted" style="text-align:center">Your best so far</p></div>' : '') + '</div>';
     nextBtn(b ? 'Train again' : 'Kick off', () => { S = { clean: 0, foulClean: 0 }; setStage(0); });
     const g = document.createElement('p'); g.className = 'muted grown';
-    g.textContent = 'For grown-ups: about 10 minutes, no timer. The skill is reordering and regrouping an addition so that two numbers make a round number first.';
+    g.textContent = 'For grown-ups: about 5 minutes, no timer. The skill is reordering and regrouping an addition so that two numbers make a round number first.';
     stageEl.firstChild.appendChild(g);
   }
 
@@ -309,10 +309,10 @@ button.shirt:hover { transform: translateY(-3px); }
       for (let x = 2; opts.size < 4; x++) if (ans + x < total) opts.add(ans + x); else opts.add(Math.max(1, ans - x));
       return { a, total, ans, opts: shuffle([...opts]) };
     };
-    const qs = [mk(10, 'ones'), mk(100, 'tens'), mk(100, 'any')]; let qi = 0;
+    const qs = [mk(10, 'ones'), mk(100, 'any')]; let qi = 0;
     const ask = () => {
       clear(); const q = qs[qi];
-      stageEl.innerHTML = '<p class="muted">Warm-up ' + (qi + 1) + ' of 3</p><p class="prompt">Which number teams up with <b>' + q.a + '</b> to make <b>' + q.total + '</b>?</p>' +
+      stageEl.innerHTML = '<p class="muted">Warm-up ' + (qi + 1) + ' of 2</p><p class="prompt">Which number teams up with <b>' + q.a + '</b> to make <b>' + q.total + '</b>?</p>' +
         '<div class="pitch"><div class="row">' + shirt(q.a) + plus + shirt('?', 'ghost') + '<span class="op">=</span><span class="big-eq">' + q.total + '</span></div></div>' +
         '<div class="opts">' + q.opts.map(o => '<button class="opt" data-v="' + o + '">' + o + '</button>').join('') + '</div>';
       $('.opts').onclick = e => {
@@ -320,7 +320,7 @@ button.shirt:hover { transform: translateY(-3px); }
         if (v === q.ans) {
           b.classList.add('right'); stageEl.querySelectorAll('.opt').forEach(o => o.disabled = true);
           say(q.a + ' + ' + q.ans + ' = ' + q.total + '. Spot on!', 'good');
-          nextBtn(qi < 2 ? 'Next' : 'On to the pitch', () => { qi++; qi < 3 ? ask() : setStage(1); });
+          setTimeout(() => { qi++; qi < 2 ? ask() : setStage(1); }, 1200);
         } else {
           b.classList.add('wrong'); b.disabled = true;
           say(q.a + ' + ' + v + ' = ' + (q.a + v) + '. That is not ' + q.total + '. Have another go.', 'bad');
@@ -349,16 +349,12 @@ button.shirt:hover { transform: translateY(-3px); }
   function replay() {
     const { a, b, c } = S.kick, d = a % 10;
     const steps = [
-      ['<div class="row">' + shirt(a) + plus + shirt(c) + plus + shirt(b) + '</div>',
-        'Left to right is hard work. First ' + a + ' + ' + c + ' = ' + (a + c) + ', and then you still have to add ' + b + '.'],
       ['<div class="balls"><div><span>⚽⚽⚽</span>+<span>⚽⚽</span>= 5</div><div><span>⚽⚽</span>+<span>⚽⚽⚽</span>= 5</div></div>',
         'Here is the secret. Swap the groups and you still have the same balls. You can add in any order.'],
       ['<div class="row">' + shirt(a, 'glow') + plus + shirt(b, 'glow slide') + plus + shirt(c, 'slide') + '</div>',
         'So let ' + a + ' and ' + b + ' stand together. Look at their last digits: ' + d + ' + ' + (10 - d) + ' = 10.'],
-      ['<div class="row">' + shirt(100, 'team') + plus + shirt(c) + '</div>',
-        a + ' + ' + b + ' = 100. A round number! They are passing partners.'],
-      ['<div class="big-eq">100 + ' + c + ' = ' + (100 + c) + '</div>',
-        'Now the finish is easy. Same answer, much less work.']
+      ['<div class="row">' + shirt(100, 'team') + plus + shirt(c) + '</div><div class="big-eq">= ' + (100 + c) + '</div>',
+        a + ' + ' + b + ' = 100. They are passing partners! Now the finish is easy.']
     ];
     let i = 0;
     const show = () => {
@@ -457,12 +453,12 @@ button.shirt:hover { transform: translateY(-3px); }
       }
       const clean = !q.tips && !q.slips && !q.bWrong; let up = false;
       D.done++; if (clean) { S.clean++; D.streak++; } else D.streak = 0;
-      if (D.level < 4 && D.streak >= (D.level === 1 ? 1 : 2)) { D.level++; D.streak = 0; up = true; }
+      if (D.level < 4 && D.streak >= 1) { D.level++; D.streak = 0; up = true; }
       $('.ball').style.setProperty('--p', D.done);
       $('#prompt').innerHTML = '<b>' + q.m + ' + ' + q.t + ' = ' + q.total + '</b>';
       if (D.done >= GOALS) { $('.net').classList.add('hit'); return setTimeout(goal, 700); }
       say(pick(['Lovely finish!', 'Back of the net!', 'Sharp work!']) + (up ? ' Level up. Bigger numbers next.' : ''), 'good');
-      nextBtn('Next ball', ask);
+      setTimeout(ask, 1400);
     }
     function goal() {
       clear();
@@ -474,7 +470,7 @@ button.shirt:hover { transform: translateY(-3px); }
 
   /* ---------- 5. spot the foul ---------- */
   function foul() {
-    const kinds = shuffle(['bond', 'changed', 'dropped']).slice(0, 2); let r = 0;
+    const kinds = shuffle(['bond', 'changed', 'dropped']); const r = 0;
     const round = () => {
       clear(); const g = gen(2), a = g.a, b = g.b, c = g.c, kind = kinds[r]; let lines, bad, why;
       const swap = 'Swap the order: ' + a + ' + ' + b + ' + ' + c;
@@ -492,7 +488,7 @@ button.shirt:hover { transform: translateY(-3px); }
       }
       const fine = ['Swapping the order is allowed, and all three numbers are still there.', a + ' + ' + b + ' really is 100.', 'That adding is right. The slip happened earlier.'];
       let first = true;
-      stageEl.innerHTML = '<p class="muted">Foul ' + (r + 1) + ' of 2</p><div class="who"><span class="avatar" aria-hidden="true">D</span>' +
+      stageEl.innerHTML = '<div class="who"><span class="avatar" aria-hidden="true">D</span>' +
         '<p class="prompt">Dash is adding <b>' + a + ' + ' + c + ' + ' + b + '</b>. One line has a foul. Tap it to blow the whistle!</p></div>' +
         '<div class="lines">' + lines.map((l, i) => '<button class="linebtn" data-i="' + i + '">' + l + '</button>').join('') + '</div>';
       $('.lines').onclick = e => {
@@ -501,7 +497,7 @@ button.shirt:hover { transform: translateY(-3px); }
           btn.classList.add('caught'); stageEl.querySelectorAll('.linebtn').forEach(x => x.disabled = true);
           if (first) S.foulClean++;
           say('Good whistle! ' + why, 'good');
-          nextBtn(r < 1 ? 'Next foul' : 'Collect your trick card', () => { r++; r < 2 ? round() : setStage(5); });
+          nextBtn('Collect your trick card', () => setStage(5));
         } else { first = false; btn.classList.add('ok', 'wrong'); btn.disabled = true; say('No foul there. ' + fine[i] + ' Look again.', 'bad'); }
       };
     };
@@ -510,12 +506,12 @@ button.shirt:hover { transform: translateY(-3px); }
 
   /* ---------- 6. trick card ---------- */
   function card() {
-    const stars = S.clean >= 5 && S.foulClean === 2 ? 3 : S.clean >= 3 ? 2 : 1;
+    const stars = S.clean >= 3 && S.foulClean === 1 ? 3 : S.clean >= 2 ? 2 : 1;
     try { if (stars > best()) localStorage.setItem('pp-stop1-stars', stars); } catch (e) {}
     let back = false;
     const front = '<span class="tag">Trick card 1</span><h2>Passing Partners</h2><p class="eg">48 + 37 + 52<br>= (48 + 52) + 37<br>= 100 + 37</p><p>Find two numbers that make a round number. Add them first.</p><span class="tag">Tap to flip</span>';
     const rear = '<span class="tag">The pro names</span><p><b>Commutative:</b> you can swap the order. 3 + 5 is the same as 5 + 3.</p><p><b>Associative:</b> you can choose which pair to add first.</p><p>Both work for adding. They do not work for taking away. More on that at a later stop.</p><span class="tag">Tap to flip back</span>';
-    stageEl.innerHTML = starRow(stars) + '<p class="prompt" style="text-align:center">' + S.clean + ' of ' + GOALS + ' finishes with no tips and no slips. ' + S.foulClean + ' of 2 fouls caught first time.</p>' +
+    stageEl.innerHTML = starRow(stars) + '<p class="prompt" style="text-align:center">' + S.clean + ' of ' + GOALS + ' finishes with no tips and no slips.' + (S.foulClean ? ' Foul caught first time.' : '') + '</p>' +
       '<button class="trick" id="trick">' + front + '</button>';
     $('#trick').onclick = function () { back = !back; this.classList.toggle('back', back); this.innerHTML = back ? rear : front; };
     say('You earned a trick card. Use this move whenever a sum looks long.', 'good');
