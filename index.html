@@ -194,7 +194,7 @@ button.shirt:hover { transform: translateY(-3px); }
 .qlist { margin: 8px 0; padding-left: 24px; display: grid; gap: 4px; }
 .mopts { display: grid; gap: 10px; }
 .mopt { display: flex; gap: 12px; align-items: center; text-align: left; border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 10px 14px; min-height: 56px; font-weight: 800; font-size: 18px; }
-.mopt i { flex: none; font-style: normal; font-family: var(--display); width: 34px; height: 34px; border-radius: 50%; background: var(--info-bg); display: grid; place-items: center; }
+.mopt > i { flex: none; font-style: normal; font-family: var(--display); width: 34px; height: 34px; border-radius: 50%; background: var(--info-bg); display: grid; place-items: center; }
 .mopt span { min-width: 0; }
 .mopt.out { opacity: .45; }
 .mopt.wrong { animation: shake .35s; }
@@ -208,6 +208,25 @@ button.shirt:hover { transform: translateY(-3px); }
 .res b { font-size: 14px; white-space: nowrap; }
 .res.first b, .res.tip b { color: var(--good); }
 .res.missed b { color: var(--foul); }
+.fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: .82em; line-height: 1.15; margin: 0 2px; }
+.fr i { font-style: normal; padding: 0 4px; }
+.fr i:first-child { border-bottom: 2px solid currentColor; }
+.eq-sm { font-size: 20px; line-height: 1.5; }
+.fig { display: block; margin: 10px auto; max-width: 100%; height: auto; }
+.fig.sm { margin: 0; }
+.fig text { fill: var(--ink); font-family: var(--body); font-weight: 800; font-size: 13px; }
+.fig .ln { stroke: var(--ink); stroke-width: 2; fill: none; }
+.fig .gl { stroke: var(--line); stroke-width: 1; fill: none; }
+.fig .fillA { fill: var(--pitch); }
+.fig .shape { fill: var(--kit); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.fig .cell { fill: var(--card); stroke: var(--muted); stroke-width: 1; }
+.fig .cell.on { fill: var(--pitch); }
+.fig .dash { stroke: var(--foul); stroke-width: 3; stroke-dasharray: 7 5; fill: none; }
+.fig .top { fill: var(--kit); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.fig .left { fill: var(--pitch); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.fig .right { fill: var(--pitch-deep); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.fig .water { fill: var(--pitch); opacity: .45; }
+.fig .glass { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 <!--/page-->
@@ -239,7 +258,7 @@ button.shirt:hover { transform: translateY(-3px); }
 
   // Delayed steps are dropped if the child has left for the menu or another stop.
   function later(fn, ms) { const t = S; window.setTimeout(() => { if (S === t) fn(); }, ms); }
-  function say(msg, kind) { fb.className = 'fb ' + (kind || 'info'); fb.textContent = msg || ''; }
+  function say(msg, kind) { fb.className = 'fb ' + (kind || 'info'); fb.innerHTML = msg || ''; }
   function nextBtn(label, fn, quiet) {
     const b = document.createElement('button');
     b.className = 'btn' + (quiet ? ' quiet' : ''); b.textContent = label; b.onclick = fn;
@@ -771,10 +790,10 @@ button.shirt:hover { transform: translateY(-3px); }
     const seen = new Map([[ans, null]]), pool = [];
     cands.forEach(c => { if (c && ok(c.v) && c.v !== ans && !pool.some(x => x.v === c.v)) pool.push(c); });
     // Aim the right answer at a random position so it is not always the biggest or smallest choice.
-    const target = rnd(0, 4), low = pool.filter(c => c.v < ans).slice(0, target), high = pool.filter(c => c.v > ans).slice(0, 4 - low.length);
+    const target = rnd(0, 4), low = pool.filter(c => c.v < ans).slice(0, target), high = pool.filter(c => c.v > ans).slice(0, 4 - target);
     low.concat(high).forEach(c => seen.set(c.v, c.msg || null));
     const count = below => [...seen.keys()].filter(v => below ? v < ans : v > ans).length;
-    for (let k = 1; count(true) < target && ans - k * step > 0 && seen.size < 5; k++) if (!seen.has(ans - k * step)) seen.set(ans - k * step, null);
+    for (let k = 1; count(true) < target && ok(ans - k * step) && k < 40; k++) if (!seen.has(ans - k * step)) seen.set(ans - k * step, null);
     for (let k = 1; seen.size < 5 && k < 40; k++) if (!seen.has(ans + k * step)) seen.set(ans + k * step, null);
     const vals = [...seen.keys()].sort((x, y) => x - y), msgs = {};
     vals.forEach(v => { if (seen.get(v)) msgs[fmt(v)] = seen.get(v); });
@@ -897,10 +916,7 @@ button.shirt:hover { transform: translateY(-3px); }
       why: D + ' badges is ' + m + ' lots of ' + d + ' badges, so it is worth ' + m + ' × ' + c + ' = ' + cards + ' cards. ' + cards + ' cards is ' + cards / b + ' lots of ' + b + ' cards, so it is worth ' + cards / b + ' × ' + a + ' = ' + ans + ' stickers.' });
   }
   const MATCH_Q = [qUnit, qPattern, qTimes, qJug, qTwo, qValue, qStatements, qBags, qChain];
-  if (location.hash === '#test') window.__matchQ = MATCH_Q;
-
-  function talk3() {
-    const steps = [
+  const TALK_FE = [
       ['Move 1: find one first', '<div class="big-eq">4 tickets = $36<br>1 ticket = $9<br>7 tickets = $63</div>',
         'When things cost the same each, work out one of them. Then you can work out any number.'],
       ['Move 2: draw the shares', '<div class="shares"><div><span>Ben</span><i></i></div><div><span>Ana</span><i></i><i></i><i></i></div></div>',
@@ -908,6 +924,9 @@ button.shirt:hover { transform: translateY(-3px); }
       ['Move 3: only scale what changes', '<div class="big-eq">100 mL → 140 mL<br>with 2 stones</div>',
         'The stones made the water rise by 40 mL, so each stone adds 20 mL. The 100 mL at the start does not grow. Watch for this trap!']
     ];
+
+  function talk3() {
+    const steps = STOPS[S.stop].talk;
     let i = 0;
     const show = () => {
       clear();
@@ -920,7 +939,7 @@ button.shirt:hover { transform: translateY(-3px); }
   }
 
   function match3() {
-    const gens = MATCH_Q.slice(); gens.splice(rnd(1, 3), 1);   // eight of the nine types, easier ones first
+    const gens = STOPS[S.stop].gens.slice(); while (gens.length > 8) gens.splice(rnd(0, gens.length - 1), 1);   // eight types per match
     const R = S.results = [], total = gens.length; S.t0 = Date.now(); let qi = 0;
     const ask = () => {
       clear(); const q = gens[qi](); let tries = 0, tipped = false;
@@ -957,6 +976,531 @@ button.shirt:hover { transform: translateY(-3px); }
     nextBtn('Back to the menu', home, true);
   }
 
+  /* =====================================================================
+     MORE MATCH PRACTICE. Six further sessions. Shared helpers first.
+     ===================================================================== */
+  const Qn = (skill, html, o, tip, why) => Object.assign(o, { skill, html, tip, why });
+  const num = v => String(v);
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const ord = n => n + (n % 100 > 10 && n % 100 < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  const fr = (n, d) => '<span class="fr"><i>' + n + '</i><i>' + d + '</i></span>';
+  function frac(n, d) {   // simplest form, as a mixed number when bigger than 1
+    const g = gcd(n, d); n /= g; d /= g; if (d === 1) return String(n);
+    const w = Math.floor(n / d), r = n - w * d; return (w ? w + ' ' : '') + fr(r, d);
+  }
+  const svg = (w, h, inner, cls) => '<svg class="fig ' + (cls || '') + '" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" role="img" aria-label="diagram">' + inner + '</svg>';
+  // Answer choices for "which of these statements are correct" questions. t is three true/false values.
+  function claimOpts(t, names) {
+    const label = set => {
+      const x = set.map(i => names ? names[i] : i + 1), one = names ? 'shape ' : 'statement ', many = names ? 'shapes ' : 'statements ';
+      return !x.length ? 'none of them' : x.length === 3 ? many + x[0] + ', ' + x[1] + ' and ' + x[2] : x.length === 1 ? one + x[0] + ' only' : many + x[0] + ' and ' + x[1] + ' only';
+    };
+    const all = [[], [0], [1], [2], [0, 1], [0, 2], [1, 2], [0, 1, 2]], right = [0, 1, 2].filter(i => t[i]);
+    const chosen = [right].concat(shuffle(all.filter(x => x.join() !== right.join())).slice(0, 4)).sort((x, y) => x.length - y.length || x.join().localeCompare(y.join()));
+    return { opts: chosen.map(label), ans: label(right), msgs: {} };
+  }
+  const listOpts = (right, wrongs, msgs, fixed) => ({ opts: fixed || shuffle([right].concat(wrongs.slice(0, 4))), ans: right, msgs: msgs || {} });
+  const olist = (items, tag) => '<' + (tag || 'ol') + ' class="qlist"><li>' + items.join('</li><li>') + '</li></' + (tag || 'ol') + '>';
+  function cellGrid(rows, cols, on, size, x0, y0) {
+    let s2 = '';
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) s2 += '<rect class="cell' + (on.has(r + ',' + c) ? ' on' : '') + '" x="' + (x0 + c * size) + '" y="' + (y0 + r * size) + '" width="' + size + '" height="' + size + '"/>';
+    return s2;
+  }
+  function randomCells(rows, cols, k) { const all = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) all.push(r + ',' + c); return new Set(shuffle(all).slice(0, k)); }
+  function barChart(labels, vals, step) {   // grid line every step, but only every second line is numbered
+    const top = Math.ceil(Math.max(...vals) / (2 * step)) * 2 * step + 2 * step, W = 320, H = 200, L = 38, B = 28, T = 12, ph = H - B - T, pw = W - L - 10;
+    const y = v => T + ph - v / top * ph; let o = '';
+    for (let v = 0; v <= top; v += step) o += '<line class="gl" x1="' + L + '" x2="' + (W - 10) + '" y1="' + y(v) + '" y2="' + y(v) + '"/>' + (v % (2 * step) ? '' : '<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>');
+    const bw = pw / labels.length;
+    labels.forEach((l, i) => { o += '<rect class="fillA" x="' + (L + i * bw + bw * 0.2) + '" y="' + y(vals[i]) + '" width="' + bw * 0.6 + '" height="' + (T + ph - y(vals[i])) + '"/><text x="' + (L + i * bw + bw / 2) + '" y="' + (H - 9) + '" text-anchor="middle">' + l + '</text>'; });
+    return svg(W, H, o + '<line class="ln" x1="' + L + '" x2="' + L + '" y1="' + T + '" y2="' + (T + ph) + '"/><line class="ln" x1="' + L + '" x2="' + (W - 10) + '" y1="' + (T + ph) + '" y2="' + (T + ph) + '"/>');
+  }
+  function iso(h) {   // h[r][c] is a stack height; row 0 is at the back
+    const R = h.length, C = h[0].length, u = 26, kx = u * 0.87, ky = u * 0.5, H = Math.max(...h.flat());
+    const ox = R * kx + 6, oy = H * u + 6, P = (c, r, z) => (ox + (c - r) * kx).toFixed(1) + ',' + (oy + (c + r) * ky - z * u).toFixed(1);
+    const cells = []; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) cells.push([r, c]);
+    cells.sort((x, y) => (x[0] + x[1]) - (y[0] + y[1]));
+    let o = '';
+    cells.forEach(([r, c]) => { for (let z = 0; z < h[r][c]; z++) o +=
+      '<polygon class="top" points="' + [P(c, r, z + 1), P(c + 1, r, z + 1), P(c + 1, r + 1, z + 1), P(c, r + 1, z + 1)].join(' ') + '"/>' +
+      '<polygon class="left" points="' + [P(c, r + 1, z + 1), P(c + 1, r + 1, z + 1), P(c + 1, r + 1, z), P(c, r + 1, z)].join(' ') + '"/>' +
+      '<polygon class="right" points="' + [P(c + 1, r, z + 1), P(c + 1, r + 1, z + 1), P(c + 1, r + 1, z), P(c + 1, r, z)].join(' ') + '"/>'; });
+    return svg(Math.ceil((R + C) * kx + 12), Math.ceil(H * u + (R + C) * ky + 12), o);
+  }
+
+  /* ---------- Rewind: working backwards and patterns ---------- */
+  function rUndo() {
+    const x = rnd(4, 15), a = rnd(2, 9), m = pick([2, 3, 4, 5]), c = rnd(2, 9), R = (x + a) * m - c;
+    return Qn('Undo the steps', 'Tom thinks of a number. He adds <b>' + a + '</b>, then multiplies by <b>' + m + '</b>, then subtracts <b>' + c + '</b>.<br>He ends with <b>' + R + '</b>.<br>What number did Tom think of?',
+      mkOpts(x, [{ v: (R + c) / m, msg: 'One more step to undo: he added ' + a + ' at the start.' }, { v: (R + c) / m + a, msg: 'To undo “add ' + a + '”, subtract ' + a + '.' },
+        { v: (R - c) / m - a, msg: 'To undo “subtract ' + c + '”, add ' + c + '.' }, { v: R / m - a }], num, 1),
+      'Start from ' + R + ' and undo each step, last step first.', 'Work backwards. ' + R + ' + ' + c + ' = ' + (R + c) + '. Then ' + (R + c) + ' ÷ ' + m + ' = ' + (x + a) + '. Then ' + (x + a) + ' − ' + a + ' = ' + x + '.');
+  }
+  function rBefore() {
+    const x = rnd(6, 20), c = pick([2, 3, 4, 6]), N = 2 * x - c;
+    return Qn('The number before', 'In a sequence, each number is <b>double</b> the number before it, <b>minus ' + c + '</b>.<br>One of the numbers in the sequence is <b>' + N + '</b>.<br>What number comes directly before ' + N + '?',
+      mkOpts(x, [{ v: 2 * N - c, msg: 'That is the number after ' + N + '. The question asks for the one before.' }, { v: (N - c) / 2, msg: 'To undo “minus ' + c + '”, add ' + c + '.' },
+        { v: N / 2, msg: 'Undo the “minus ' + c + '” first, then halve.' }, { v: N + c }], num, 1),
+      'Undo the rule: first undo “minus ' + c + '”, then undo “double”.', N + ' + ' + c + ' = ' + (N + c) + ', and ' + (N + c) + ' ÷ 2 = ' + x + '. Check: double ' + x + ' is ' + 2 * x + ', minus ' + c + ' is ' + N + '.');
+  }
+  function rNth() {
+    const a = rnd(2, 9), d = pick([3, 4, 6, 7, 8]), k = pick([10, 12, 15, 20]), ans = a + (k - 1) * d;
+    return Qn('Count the jumps', 'Here are the first four numbers in a sequence:<br><b>' + [0, 1, 2, 3].map(i => a + i * d).join(', ') + ', …</b><br>What is the <b>' + k + 'th</b> number in the sequence?',
+      mkOpts(ans, [{ v: a + k * d, msg: 'From the 1st number to the ' + k + 'th there are only ' + (k - 1) + ' jumps.' }, { v: k * d, msg: 'The sequence starts at ' + a + ', not at ' + d + '.' },
+        { v: a + (k - 2) * d }, { v: a + 4 * d, msg: 'That is the 5th number.' }], num, d),
+      'How big is each jump? How many jumps from the 1st number to the ' + k + 'th?', 'Each jump is ' + d + '. From the 1st to the ' + k + 'th is ' + (k - 1) + ' jumps. ' + a + ' + ' + (k - 1) + ' × ' + d + ' = ' + ans + '.');
+  }
+  function rCycle() {
+    const cols = ['red', 'blue', 'gold', 'green', 'white']; let cyc, L;
+    for (;;) {
+      L = pick([4, 5, 6, 7]); cyc = []; for (let i = 0; i < L; i++) cyc.push(pick(cols.slice(0, 4)));
+      const minimal = ![1, 2, 3].some(p => L % p === 0 && p < L && cyc.every((v, i) => v === cyc[i % p]));
+      if (minimal && new Set(cyc).size >= 3 && cyc[0] !== cyc[L - 1]) break;
+    }
+    const N = rnd(23, 70), r = N % L, ans = cyc[(N - 1) % L];
+    return Qn('Find the repeat', 'Flags along the touchline repeat in this order:<br><b>' + cyc.join(', ') + '</b>, then ' + cyc[0] + ' again, and so on.<br>What colour is flag number <b>' + N + '</b>?',
+      listOpts(ans, [], {}, cols), 'How many flags are there before the order starts again?',
+      'The order repeats every ' + L + ' flags. ' + N + ' ÷ ' + L + ' = ' + Math.floor(N / L) + ' remainder ' + r + '. ' + (r ? 'So flag ' + N + ' matches flag ' + r + ', which is ' + ans + '.' : 'No remainder, so flag ' + N + ' matches the last flag in the order, which is ' + ans + '.'));
+  }
+  function rWhich() {
+    const a = rnd(3, 9), d = pick([3, 4, 5, 6]), k = rnd(8, 15), N = a + (k - 1) * d;
+    return Qn('Which pattern', 'Dot pattern 1 has <b>' + a + '</b> dots. Every new pattern has <b>' + d + '</b> more dots than the one before.<br>Which pattern has exactly <b>' + N + '</b> dots?',
+      mkOpts(k, [{ v: k - 1, msg: 'Pattern 1 already has ' + a + ' dots. Count it too.' }, { v: k + 1 }, { v: k + 2 }], v => 'Pattern ' + v, 1),
+      'How many extra dots are there after pattern 1? How many jumps of ' + d + ' is that?', N + ' − ' + a + ' = ' + (N - a) + ' extra dots. ' + (N - a) + ' ÷ ' + d + ' = ' + (k - 1) + ' jumps after pattern 1. So it is pattern ' + k + '.');
+  }
+  function rDouble() {
+    const st = pick([3, 5, 7, 9]), T = pick([100, 200, 300]), seq = [st]; while (seq[seq.length - 1] <= T) seq.push(seq[seq.length - 1] * 2);
+    const ans = seq[seq.length - 1];
+    return Qn('Keep doubling', 'A sequence starts at <b>' + st + '</b> and doubles each time: ' + seq.slice(0, 3).join(', ') + ', …<br>What is the first number in the sequence that is bigger than <b>' + T + '</b>?',
+      mkOpts(ans, [{ v: ans / 2, msg: 'That number is not bigger than ' + T + ' yet.' }, { v: ans * 2, msg: 'An earlier number in the sequence is already bigger than ' + T + '.' }, { v: ans + st }, { v: ans - st }], num, st),
+      'Keep doubling and write each number down.', 'The sequence goes ' + seq.join(', ') + '. The first one bigger than ' + T + ' is ' + ans + '.');
+  }
+  function rFlags() {
+    if (Math.random() < 0.5) {
+      const g = pick([2, 3, 4, 5]), n = rnd(6, 12), L = g * n;
+      return Qn('Count the gaps', 'Flags are placed along a straight <b>' + L + ' m</b> touchline, one every <b>' + g + ' m</b>, with a flag at each end.<br>How many flags are there?',
+        mkOpts(n + 1, [{ v: n, msg: 'That is the number of gaps. Count the flag at the very start as well.' }, { v: n - 1 }, { v: n + 2 }], num, 1),
+        'Draw a short one first: a 6 m line with a flag every 2 m.', L + ' ÷ ' + g + ' = ' + n + ' gaps. A straight line has one more flag than gaps, so there are ' + (n + 1) + ' flags.');
+    }
+    const g = pick([2, 4, 5]), a = g * rnd(3, 6), b = g * rnd(2, 4), ans = 2 * (a + b) / g;
+    return Qn('Count the gaps', 'Flags are placed all the way around a rectangular pitch that is <b>' + a + ' m</b> by <b>' + b + ' m</b>, one every <b>' + g + ' m</b>, starting at a corner.<br>How many flags are there?',
+      mkOpts(ans, [{ v: ans + 1, msg: 'Going around a loop, the last flag is the first flag. Do not count it twice.' }, { v: (a + b) / g, msg: 'That covers only two sides of the pitch.' }, { v: ans - 1 }, { v: (a + b) / g + 1 }], num, 2),
+      'How far is it all the way around? Around a loop, flags and gaps match up.', 'All the way around is ' + 2 * (a + b) + ' m. ' + 2 * (a + b) + ' ÷ ' + g + ' = ' + ans + ' gaps. Around a loop there is one flag for each gap, so ' + ans + ' flags.');
+  }
+  function rMachine() {
+    for (;;) {
+      const st = rnd(10, 40), n = pick([4, 5, 6]), seq = [st]; for (let i = 0; i <= n; i++) { const v = seq[i]; seq.push(v % 3 === 0 ? v / 3 : v + 4); }
+      if (new Set([seq[n - 1], seq[n], seq[n + 1], st]).size < 4) continue;
+      return Qn('Follow the rule', 'Start with <b>' + st + '</b> and follow this rule <b>' + n + ' times</b>:' + olist(['If the number is a multiple of 3, divide it by 3.', 'If it is not, add 4.'], 'ul') + 'What number do you finish with?',
+        mkOpts(seq[n], [{ v: seq[n - 1], msg: 'That is after ' + (n - 1) + ' goes. One more.' }, { v: seq[n + 1], msg: 'That is one go too many.' }, { v: seq[n] + 4 }, { v: st, msg: 'That is the starting number.' }], num, 1),
+        'Write down the number after every go, and count the goes.', 'The numbers go ' + seq.slice(0, n + 1).join(' → ') + '. After ' + n + ' goes the number is ' + seq[n] + '.');
+    }
+  }
+  function rSpend() {
+    const a = rnd(3, 12), R = rnd(5, 20), ans = 2 * (R + a);
+    return Qn('Money backwards', 'Sam spent <b>half</b> of his money on boots. Then he spent <b>$' + a + '</b> on socks.<br>He has <b>$' + R + '</b> left.<br>How much money did Sam start with?',
+      mkOpts(ans, [{ v: 2 * R + a, msg: 'Undo the socks first, then the boots. Add $' + a + ' before doubling.' }, { v: R + a, msg: 'That is what he had after buying the boots. The boots cost the other half.' }, { v: 2 * R }, { v: ans + a }], money, 2),
+      'Work backwards: undo the socks, then undo the boots.', 'Before the socks he had $' + R + ' + $' + a + ' = $' + (R + a) + '. That was half of his money, so he started with 2 × $' + (R + a) + ' = $' + ans + '.');
+  }
+
+  /* ---------- Check Every Claim: graphs, chance and best cases ---------- */
+  function cChance() {
+    const cols = ['red', 'blue', 'green', 'yellow'], cnt = shuffle(pick([[8, 5, 2, 1], [10, 5, 4, 1], [9, 6, 2, 1], [10, 6, 3, 1], [6, 3, 2, 1], [7, 4, 2, 1]])), T = cnt.reduce((x, y) => x + y, 0);
+    const [A, B] = shuffle([0, 1, 2, 3]), half = cnt.findIndex(v => v * 2 === T), H = half >= 0 && Math.random() < 0.6 ? half : rnd(0, 3);
+    const mx = cnt.indexOf(Math.max(...cnt)), mn = cnt.indexOf(Math.min(...cnt));
+    const third = pick([['It is certain that the bib is not white.', true, 'There are no white bibs in the bag.'], ['It is impossible to pick a ' + cols[mn] + ' bib.', false, 'There is a ' + cols[mn] + ' bib in the bag, so it is possible.'],
+      ['It is certain that she picks a ' + cols[mx] + ' bib.', false, 'Other colours are in the bag too, so it is not certain.']]);
+    const t = [cnt[A] > cnt[B], cnt[H] * 2 === T, third[1]];
+    return Qn('Chance claims', 'A kit bag holds <b>' + T + '</b> bibs:' + olist(cols.map((c, i) => cnt[i] + ' ' + c), 'ul') + 'Zara takes one bib out without looking.<br>Which of these statements is/are correct?' +
+      olist(['She is more likely to pick a ' + cols[A] + ' bib than a ' + cols[B] + ' bib.', 'She is equally likely to pick a ' + cols[H] + ' bib or a bib that is not ' + cols[H] + '.', third[0]]),
+      claimOpts(t), 'Decide about each statement on its own before you look at the answers.',
+      'Statement 1 is ' + (t[0] ? 'right' : 'wrong') + ': there are ' + cnt[A] + ' ' + cols[A] + ' and ' + cnt[B] + ' ' + cols[B] + '. Statement 2 is ' + (t[1] ? 'right' : 'wrong') + ': ' + cnt[H] + ' of the ' + T + ' bibs are ' + cols[H] + ', which is ' + (t[1] ? '' : 'not ') + 'exactly half. Statement 3 is ' + (t[2] ? 'right' : 'wrong') + ': ' + third[2]);
+  }
+  function cLeast() {
+    for (;;) {
+      const cnt = shuffle(pick([[3, 4, 8, 10], [2, 5, 6, 12], [4, 5, 7, 9], [3, 6, 7, 8], [2, 3, 9, 11]])), T = cnt.reduce((x, y) => x + y, 0), most = Math.random() < 0.4;
+      const ev = [['The bib is either red or blue.', cnt[0] + cnt[1]], ['The bib is green.', cnt[2]], ['The bib is not yellow.', T - cnt[3]], ['The bib is not red.', T - cnt[0]], ['The bib is neither blue nor yellow.', T - cnt[1] - cnt[3]]];
+      const vals = ev.map(e => e[1]), best2 = most ? Math.max(...vals) : Math.min(...vals);
+      if (vals.filter(v => v === best2).length !== 1) continue;
+      return Qn('Most and least likely', 'A box holds <b>' + T + '</b> bibs: ' + cnt[0] + ' red, ' + cnt[1] + ' blue, ' + cnt[2] + ' green and ' + cnt[3] + ' yellow.<br>One bib is taken out without looking.<br>Which of these is the <b>' + (most ? 'most' : 'least') + ' likely</b>?',
+        listOpts(ev[vals.indexOf(best2)][0], [], {}, ev.map(e => e[0])), 'For each one, count how many of the ' + T + ' bibs would make it true.',
+        'Count the bibs that fit: ' + ev.map((e, i) => 'ABCDE'[i] + ' ' + e[1]).join(', ') + ' out of ' + T + '. The ' + (most ? 'biggest' : 'smallest') + ' count is ' + best2 + '.');
+    }
+  }
+  function cGraphClaims() {
+    const names = ['Ali', 'Bea', 'Cam', 'Dee', 'Eli'], step = pick([2, 5]), k = pick([1, 2, 3, 4]);
+    const rest = shuffle([1, 2, 3, 4, 5, 6, 7, 8].filter(v => v !== k && v !== 2 * k)).slice(0, 3), ints = shuffle([k, 2 * k].concat(rest)), v = ints.map(i => i * step), total = v.reduce((x, y) => x + y, 0);
+    let X, Y; if (Math.random() < 0.5) { X = ints.indexOf(2 * k); Y = ints.indexOf(k); } else { [X, Y] = shuffle([0, 1, 2, 3, 4]); if (v[X] < v[Y]) [X, Y] = [Y, X]; }
+    const M = total + pick([-step, 0, step]); let [P, Q2] = shuffle([0, 1, 2, 3, 4]); if (v[P] < v[Q2]) [P, Q2] = [Q2, P];
+    const d = v[P] - v[Q2] + pick([0, 0, step, -step]), t = [v[X] === 2 * v[Y], total > M, d === v[P] - v[Q2]];
+    return Qn('Graph claims', 'The graph shows the goals scored by five players this season.' + barChart(names, v, step) + 'Which of these statements is/are correct?' +
+      olist([names[X] + ' scored exactly twice as many goals as ' + names[Y] + '.', 'Altogether the five players scored more than ' + M + ' goals.', names[P] + ' scored ' + d + ' more goals than ' + names[Q2] + '.']),
+      claimOpts(t), 'First work out what each line on the graph is worth. Then read every bar.',
+      'Each line is worth ' + step + '. The scores are ' + names.map((n, i) => n + ' ' + v[i]).join(', ') + ', which total ' + total + '. Statement 1 is ' + (t[0] ? 'right' : 'wrong') + ', statement 2 is ' + (t[1] ? 'right' : 'wrong') + ' and statement 3 is ' + (t[2] ? 'right' : 'wrong') + ' (the gap is ' + (v[P] - v[Q2]) + ').');
+  }
+  function cNeed() {
+    const step = pick([2, 5]), v = [0, 0, 0, 0].map(() => rnd(1, 7) * step), sum = v.reduce((x, y) => x + y, 0), gap = rnd(3, 12), last = sum + gap;
+    return Qn('Beat the total', 'Last week the club shop sold <b>' + last + '</b> scarves. The graph shows this week’s sales from Monday to Thursday.' + barChart(['Mon', 'Tue', 'Wed', 'Thu'], v, step) +
+      'What is the <b>smallest</b> number of scarves the shop must sell on Friday to sell <b>more</b> than last week?',
+      mkOpts(gap + 1, [{ v: gap, msg: 'That would only equal last week. To beat it, sell one more.' }, { v: gap - 1 }, { v: gap + 2 }, { v: gap + step }], num, 1),
+      'Add up this week so far. How many to draw level? How many to go one better?', 'So far this week: ' + v.join(' + ') + ' = ' + sum + '. Another ' + gap + ' would equal last week’s ' + last + ', so ' + (gap + 1) + ' are needed to beat it.');
+  }
+  function cCrates() {
+    const [w, cap, capTxt] = pick([[600, 2000, '2 kg'], [400, 1000, '1 kg'], [300, 1000, '1 kg'], [700, 3000, '3 kg'], [800, 2500, '2.5 kg']]), per = Math.floor(cap / w), N = rnd(4, 7) * per + rnd(1, per - 1), ans = Math.ceil(N / per);
+    return Qn('Leftovers', 'A water bottle weighs <b>' + w + ' g</b>. A crate can carry at most <b>' + capTxt + '</b>.<br>There are <b>' + N + '</b> bottles to carry.<br>What is the smallest number of crates needed?',
+      mkOpts(ans, [{ v: Math.floor(N / per), msg: 'The leftover bottles still need a crate.' }, { v: Math.ceil(N * w / cap), msg: 'A bottle cannot be split between crates. Work out how many whole bottles fit in one crate.' }, { v: ans + 1 }, { v: ans + 2 }], num, 1),
+      'How many whole bottles fit in one crate?', per + ' bottles weigh ' + per * w + ' g, and one more would be too heavy, so a crate holds ' + per + ' bottles. ' + N + ' ÷ ' + per + ' = ' + Math.floor(N / per) + ' remainder ' + N % per + ', so ' + ans + ' crates are needed.');
+  }
+  function cCoins() {
+    const X = pick([130, 160, 170, 190, 210, 240, 260, 280, 310, 340]), n50 = Math.floor(X / 50), r = X % 50, n20 = Math.floor(r / 20), n10 = (r % 20) / 10, ans = n50 + n20 + n10;
+    return Qn('Fewest coins', 'Milo has plenty of 50c, 20c and 10c coins.<br>What is the <b>smallest</b> number of coins he can use to pay exactly <b>$' + (X / 100).toFixed(2) + '</b>?',
+      mkOpts(ans, [{ v: n50 + r / 10, msg: 'There is a 20c coin too. Two 10c coins can be swapped for one 20c coin.' }, { v: X / 10, msg: 'Bigger coins make the amount with fewer coins.' }, { v: ans + 1 }, { v: ans - 1 }], num, 1),
+      'Use the biggest coins first.', 'Use the biggest coins first: ' + n50 + ' × 50c = ' + n50 * 50 + 'c' + (n20 ? ', then ' + n20 + ' × 20c' : '') + (n10 ? ', then ' + n10 + ' × 10c' : '') + '. That is ' + ans + ' coins.');
+  }
+  function cMaxDiff() {
+    const a = rnd(2, 5), T = 2 * a + rnd(6, 18), ans = T - 2 * a;
+    return Qn('Biggest gap', 'Two strikers scored <b>' + T + '</b> goals between them. Each of them scored <b>at least ' + a + '</b> goals.<br>What is the largest possible difference between their two scores?',
+      mkOpts(ans, [{ v: T - a, msg: 'That is the biggest score one striker could have. The question asks for the difference.' }, { v: T, msg: 'Neither striker scored 0. Each scored at least ' + a + '.' }, { v: ans - 1 }, { v: ans + 1 }], num, 1),
+      'To make the gap as big as possible, make one score as small as it can be.', 'Make one score as small as possible: ' + a + '. Then the other is ' + T + ' − ' + a + ' = ' + (T - a) + '. The difference is ' + (T - a) + ' − ' + a + ' = ' + ans + '.');
+  }
+  function cParity() {
+    const N = pick([40, 50, 60, 100, 45, 75, 99]), pool = [['All three numbers are even.', 0], ['Exactly one of the numbers is odd.', 1], ['Exactly two of the numbers are odd.', 2], ['All three numbers are odd.', 3]];
+    const pickd = shuffle([0, 1, 2, 3]).slice(0, 3).sort().map(i => pool[i]), t = pickd.map(x => x[1] % 2 === N % 2);
+    return Qn('Odd and even', 'Three shirt numbers add up to <b>' + N + '</b>.<br>Which of these could be true?' + olist(pickd.map(x => x[0])), claimOpts(t),
+      'Try small numbers. What do two odd numbers add up to: odd or even?', 'Two odd numbers always add to an even number. So the total is odd only when one or all three of the numbers are odd. ' + N + ' is ' + (N % 2 ? 'odd' : 'even') + ', so ' + pickd.map((x, i) => 'statement ' + (i + 1) + ' is ' + (t[i] ? 'possible' : 'impossible')).join(', ') + '.');
+  }
+  function cHowMany() {
+    const lo = rnd(4, 9), cnt = rnd(2, 6), A = 2 * lo + rnd(0, 1), B = rnd(3, 8), C = lo + cnt + 1 + B;
+    return Qn('How many fit', 'Zed is thinking of a whole number.' + olist(['Double his number is more than <b>' + A + '</b>.', 'His number plus <b>' + B + '</b> is less than <b>' + C + '</b>.'], 'ul') + 'How many different numbers could Zed be thinking of?',
+      mkOpts(cnt, [{ v: cnt + 1, msg: '“More than” and “less than” leave out the end numbers.' }, { v: cnt + 2, msg: '“More than” and “less than” leave out the end numbers.' }, { v: cnt - 1 }, { v: C - B }], num, 1),
+      'Find the smallest number that works and the biggest number that works.', 'Double is more than ' + A + ', so his number is at least ' + (lo + 1) + '. Plus ' + B + ' is less than ' + C + ', so it is at most ' + (lo + cnt) + '. From ' + (lo + 1) + ' to ' + (lo + cnt) + ' there are ' + cnt + ' numbers.');
+  }
+
+  /* ---------- Count Them Up ---------- */
+  const fact = n => n < 2 ? 1 : n * fact(n - 1);
+  function nKits() {
+    const a = rnd(2, 4), b = rnd(3, 5), c = pick([2, 3]), ans = a * b * c;
+    return Qn('Multiply the choices', 'A team can choose from <b>' + a + '</b> shirt colours, <b>' + b + '</b> shorts colours and <b>' + c + '</b> sock colours.<br>How many different kits can they make, using one of each?',
+      mkOpts(ans, [{ v: a + b + c, msg: 'Every shirt can go with every pair of shorts and every pair of socks. Multiply the choices.' }, { v: a * b, msg: 'Do not forget the socks.' }, { v: a * b + c }, { v: ans + a }], num, a),
+      'How many shirt-and-shorts pairs are there? Then each of those can have any socks.', 'Each of the ' + a + ' shirts goes with each of the ' + b + ' shorts: ' + a * b + ' pairs. Each pair can have ' + c + ' kinds of socks. ' + a * b + ' × ' + c + ' = ' + ans + '.');
+  }
+  function nPairs() {
+    const n = pick([5, 7, 8, 9]), ans = n * (n - 1) / 2;
+    return Qn('Do not count twice', 'There are <b>' + n + '</b> teams in a league. Every team plays each of the other teams <b>once</b>.<br>How many matches are played altogether?',
+      mkOpts(ans, [{ v: n * (n - 1), msg: 'That counts every match twice. A against B is the same match as B against A.' }, { v: n * n, msg: 'A team cannot play itself.' }, { v: n - 1, msg: 'That is how many matches one team plays.' }, { v: ans + n }], num, n),
+      'How many matches does one team play? Then watch out for counting each match twice.', 'Each team plays ' + (n - 1) + ' others: ' + n + ' × ' + (n - 1) + ' = ' + n * (n - 1) + '. That counts each match twice, so halve it: ' + ans + '.');
+  }
+  function nRange() {
+    const a = rnd(12, 40), b = a + rnd(14, 45), ans = b - a + 1;
+    return Qn('Count both ends', 'The shirts in a store room are numbered from <b>' + a + '</b> to <b>' + b + '</b>, with no numbers missing.<br>How many shirts are there?',
+      mkOpts(ans, [{ v: b - a, msg: 'Subtracting leaves out one of the end shirts. Count both ends.' }, { v: b - a - 1 }, { v: ans + 1 }, { v: ans + 9 }], num, 1),
+      'Try a small one first: how many shirts from 5 to 9?', b + ' − ' + a + ' = ' + (b - a) + ', then add 1 so that both end shirts are counted: ' + ans + '.');
+  }
+  function nMult() {
+    const k = pick([3, 4, 6, 7, 8]), lo = k * rnd(2, 6) + rnd(1, k - 1); let hi = lo + k * rnd(4, 9) + rnd(0, k - 1); if (hi % k === 0) hi++;
+    const f = Math.floor(lo / k) + 1, g = Math.floor(hi / k), ans = g - f + 1;
+    return Qn('Count the multiples', 'How many multiples of <b>' + k + '</b> are there between <b>' + lo + '</b> and <b>' + hi + '</b>?',
+      mkOpts(ans, [{ v: ans + 1, msg: 'Find the first and the last multiple in the range, then count carefully.' }, { v: ans - 1, msg: 'Find the first and the last multiple in the range, then count carefully.' }, { v: ans + 2 }, { v: g }], num, 1),
+      'What is the first multiple of ' + k + ' after ' + lo + '? What is the last one before ' + hi + '?', 'The first is ' + f + ' × ' + k + ' = ' + f * k + ' and the last is ' + g + ' × ' + k + ' = ' + g * k + '. From the ' + ord(f) + ' multiple to the ' + ord(g) + ' is ' + g + ' − ' + f + ' + 1 = ' + ans + '.');
+  }
+  function nVenn() {
+    const both = rnd(2, 6), oA = rnd(4, 9), oB = rnd(3, 8), nei = rnd(1, 5), N = both + oA + oB + nei, A = oA + both, B = oB + both;
+    return Qn('Overlapping groups', 'There are <b>' + N + '</b> children at a holiday camp. <b>' + A + '</b> of them play football and <b>' + B + '</b> play cricket. <b>' + nei + '</b> children play neither sport.<br>How many children play <b>both</b> sports?',
+      mkOpts(both, [{ v: A + B - N, msg: 'Take out the ' + nei + ' children who play neither sport first.' }, { v: oB, msg: 'That is how many play only cricket.' }, { v: oA, msg: 'That is how many play only football.' }, { v: both + nei }], num, 1),
+      'How many children play at least one sport? Compare that with ' + A + ' + ' + B + '.', N + ' − ' + nei + ' = ' + (N - nei) + ' children play at least one sport. ' + A + ' + ' + B + ' = ' + (A + B) + ' counts the both-children twice. ' + (A + B) + ' − ' + (N - nei) + ' = ' + both + '.');
+  }
+  function nOrder() {
+    const [n, cap] = pick([[3, false], [4, false], [4, true], [5, true]]), free = cap ? n - 1 : n, ans = fact(free);
+    return Qn('Line them up', '<b>' + n + '</b> players line up in a row for a photo.' + (cap ? ' The captain must stand at the left end.' : '') + '<br>How many different orders are possible?',
+      mkOpts(ans, [{ v: free * (free - 1), msg: 'Keep going. After the first two places are filled, there are still choices for the rest.' }, { v: cap ? fact(n) : fact(n - 1), msg: cap ? 'The captain’s place is fixed. Only the other ' + (n - 1) + ' players can change places.' : 'There are ' + n + ' choices for the first place.' },
+        { v: n * n }, { v: 2 * n }], num, 2),
+      'How many choices for the first free place? Then how many are left for the next?', 'There are ' + free + ' choices for the first free place, then ' + (free - 1) + ' for the next, and so on: ' + Array.from({ length: free }, (_, i) => free - i).join(' × ') + ' = ' + ans + '.');
+  }
+  function nDigitSum() {
+    const S2 = rnd(5, 13), list = []; for (let t = 1; t <= 9; t++) if (S2 - t >= 0 && S2 - t <= 9) list.push(t * 10 + S2 - t);
+    return Qn('List them in order', 'How many two-digit numbers have digits that add up to <b>' + S2 + '</b>?',
+      mkOpts(list.length, [{ v: list.length + 1, msg: S2 <= 9 ? 'A two-digit number cannot start with 0.' : 'List them in order so that none is counted twice.' }, { v: list.length - 1, msg: 'List them in order so that none is missed.' }, { v: list.length + 2 }, { v: S2 }], num, 1),
+      'List them in order, starting with the smallest tens digit.', 'In order they are ' + list.join(', ') + '. That is ' + list.length + ' numbers.');
+  }
+  function nRoutes() {
+    const [m, n] = pick([[2, 2], [3, 2], [3, 3], [4, 2]]), u = 44, W = m * u + 70, H = n * u + 50, x0 = 35, y0 = 22; let o = '';
+    for (let i = 0; i <= m; i++) o += '<line class="ln" x1="' + (x0 + i * u) + '" x2="' + (x0 + i * u) + '" y1="' + y0 + '" y2="' + (y0 + n * u) + '"/>';
+    for (let j = 0; j <= n; j++) o += '<line class="ln" x1="' + x0 + '" x2="' + (x0 + m * u) + '" y1="' + (y0 + j * u) + '" y2="' + (y0 + j * u) + '"/>';
+    o += '<text x="' + (x0 - 16) + '" y="' + (y0 + n * u + 16) + '">A</text><text x="' + (x0 + m * u + 8) + '" y="' + (y0 - 6) + '">B</text><text x="' + (W - 4) + '" y="' + (H - 6) + '" text-anchor="end">north ↑</text>';
+    const ways = Array.from({ length: n + 1 }, () => Array(m + 1).fill(1)); for (let j = 1; j <= n; j++) for (let i = 1; i <= m; i++) ways[j][i] = ways[j - 1][i] + ways[j][i - 1];
+    const ans = ways[n][m];
+    return Qn('Count the routes', 'The lines are paths. Ravi walks from A to B along the paths. He only ever walks <b>north</b> or <b>east</b>.' + svg(W, H, o) + 'How many different routes can he take?',
+      mkOpts(ans, [{ v: m + n, msg: 'That is how many blocks long each route is. Count the different routes.' }, { v: m * n, msg: 'That is the number of squares, not the number of routes.' }, { v: 2 * (m + n) }, { v: ans - 2 }], num, 2),
+      'Write on each corner how many ways there are to reach it.', 'Write on each corner the number of ways to reach it. Each corner is the corner to its west plus the corner to its south. The number at B comes to ' + ans + '.');
+  }
+  function nRows() {
+    const k = pick([4, 6, 7, 8]), N = k * rnd(3, 7) + rnd(1, k - 1), ans = Math.ceil(N / k);
+    return Qn('Which row', 'Players are numbered 1, 2, 3, … and sit in rows of <b>' + k + '</b>, filling each row before starting the next.<br>Which row is player number <b>' + N + '</b> in?',
+      mkOpts(ans, [{ v: ans - 1, msg: 'Those rows are full. Player ' + N + ' is in the next row.' }, { v: N % k, msg: 'That is the seat along the row, not the row.' }, { v: ans + 1 }, { v: ans + 2 }], v => 'Row ' + v, 1),
+      'How many full rows come before player ' + N + '?', N + ' ÷ ' + k + ' = ' + (ans - 1) + ' remainder ' + N % k + '. So ' + (ans - 1) + ' rows are full, and player ' + N + ' is in row ' + ans + '.');
+  }
+
+  /* ---------- Fair Shares: fractions by meaning ---------- */
+  function fShade() {
+    for (;;) {
+      const [R, C] = pick([[2, 6], [3, 4], [4, 5], [2, 8], [3, 6], [4, 4], [2, 5]]), T = R * C, [n, d] = pick([[1, 2], [2, 3], [3, 4], [3, 5], [5, 6], [2, 5]]);
+      if (T % d) continue; const target = T / d * n; if (target < 4) continue; const sh = rnd(1, target - 2), ans = target - sh, u = Math.min(34, Math.floor(280 / C));
+      return Qn('Shade the fraction', 'This shape is made of <b>' + T + '</b> equal squares. Some are shaded.' + svg(C * u + 4, R * u + 4, cellGrid(R, C, randomCells(R, C, sh), u, 2, 2)) + 'How many <b>more</b> squares must be shaded so that ' + fr(n, d) + ' of the shape is shaded?',
+        mkOpts(ans, [{ v: target, msg: 'That is how many must be shaded altogether. Some are shaded already.' }, { v: T - target, msg: 'That is how many would stay unshaded.' }, { v: T - sh }, { v: ans + 1 }], num, 1),
+        'How many squares is ' + fr(n, d) + ' of ' + T + '?', fr(n, d) + ' of ' + T + ' is ' + T + ' ÷ ' + d + ' × ' + n + ' = ' + target + '. There are ' + sh + ' shaded already, so ' + target + ' − ' + sh + ' = ' + ans + ' more.');
+    }
+  }
+  function fNot() {
+    const d = pick([3, 4, 5, 6, 8]); let n; do { n = rnd(1, d - 1); } while (gcd(n, d) > 1); const N = d * rnd(3, 7), part = N / d * n, ans = N - part;
+    return Qn('The other part', 'A club has <b>' + N + '</b> players. ' + fr(n, d) + ' of them are defenders.<br>How many players are <b>not</b> defenders?',
+      mkOpts(ans, [{ v: part, msg: 'That is how many are defenders. The question asks for the rest.' }, { v: N / d, msg: 'That is one part out of ' + d + '.' }, { v: N - n }, { v: N - d }], num, N / d),
+      'Split the players into ' + d + ' equal groups first.', N + ' ÷ ' + d + ' = ' + N / d + ' in each part. Defenders: ' + n + ' × ' + N / d + ' = ' + part + '. Not defenders: ' + N + ' − ' + part + ' = ' + ans + '.');
+  }
+  function fTray() {
+    for (;;) {
+      const T = pick([12, 16, 20]), a = pick([2, 4, 6]), half = (T - a) / 2, c = rnd(1, 2), left = half - c, wrong = T / 2 - a - c;
+      if (left < 1 || wrong === left) continue;
+      return Qn('Of what is left', 'A tray holds <b>' + T + '</b> orange pieces. The Reds take <b>' + a + '</b> pieces. The Blues take <b>half of what is left</b>. Then the coach eats <b>' + c + '</b>.<br>What fraction of the tray is left?',
+        mkOpts(left, [{ v: wrong, msg: 'The Blues take half of what is left, not half of the whole tray.' }, { v: half, msg: 'The coach eats some too.' }, { v: left + a }, { v: c }], v => frac(v, T), 1),
+        'Count pieces first. Turn it into a fraction at the very end.', T + ' − ' + a + ' = ' + (T - a) + ' left. The Blues take half, leaving ' + half + '. The coach eats ' + c + ', leaving ' + left + '. ' + left + ' out of ' + T + ' is ' + frac(left, T) + '.');
+    }
+  }
+  function fHowMany() {
+    const d = pick([2, 3, 4, 5]), w = rnd(2, 5), extra = Math.random() < 0.6 ? rnd(1, d - 1) : 0, name = { 2: 'halves', 3: 'thirds', 4: 'quarters', 5: 'fifths' }[d], ans = w * d + extra;
+    return Qn('How many parts', 'How many ' + name + ' are there in <b>' + frac(ans, d) + '</b>?',
+      mkOpts(ans, [extra ? { v: w * d, msg: 'Do not forget the extra part.' } : null, { v: w + d, msg: 'Each whole one has ' + d + ' ' + name + '. Multiply.' }, { v: d, msg: 'That is how many ' + name + ' are in 1.' }, { v: ans + d }, { v: ans - 1 }], num, 1),
+      'How many ' + name + ' are in 1?', 'Each whole one has ' + d + ' ' + name + ', so ' + w + ' wholes have ' + w * d + '.' + (extra ? ' The extra part is ' + extra + ' more: ' + ans + '.' : ''));
+  }
+  function fJumps() {
+    const [d, n] = pick([[2, 1], [2, 3], [3, 2], [3, 4], [4, 3], [4, 5]]), S0 = rnd(1, 5), k = rnd(4, 7), total = S0 * d + k * n;
+    return Qn('Fraction steps', 'Kim starts at <b>' + S0 + '</b> and counts up in steps of ' + fr(n, d) + '.<br>What number does she reach after <b>' + k + '</b> steps?',
+      mkOpts(total, [{ v: S0 * d + k, msg: 'Each step is ' + fr(n, d) + ', not ' + fr(1, d) + '.' }, { v: (S0 + k * n) * d, msg: 'The steps are fractions, not whole numbers.' }, { v: total - n, msg: 'That is after ' + (k - 1) + ' steps.' }, { v: total + n }], v => frac(v, d), n),
+      'How far do ' + k + ' steps go altogether?', k + ' steps of ' + fr(n, d) + ' is ' + fr(k * n, d) + ', which is ' + frac(k * n, d) + '. ' + S0 + ' + ' + frac(k * n, d) + ' = ' + frac(total, d) + '.');
+  }
+  function fBiggest() {
+    const pool = [[1, 2], [2, 3], [3, 4], [5, 8], [5, 6], [3, 8], [7, 12], [5, 12], [1, 3], [1, 4], [7, 8], [11, 12], [1, 6]], five = shuffle(pool).slice(0, 5), big = Math.random() < 0.5;
+    const lcd = five.reduce((l, f) => l * f[1] / gcd(l, f[1]), 1), top = five.map(f => f[0] * lcd / f[1]), best2 = big ? Math.max(...top) : Math.min(...top), opts = five.map(f => fr(f[0], f[1]));
+    return Qn('Compare fractions', 'Which of these fractions is the <b>' + (big ? 'largest' : 'smallest') + '</b>?', listOpts(opts[top.indexOf(best2)], [], {}, opts),
+      'Is each one more or less than a half? Then give them the same bottom number.', 'Give them all the bottom number ' + lcd + ': ' + five.map((f, i) => fr(f[0], f[1]) + ' = ' + fr(top[i], lcd)).join(', ') + '. The ' + (big ? 'largest' : 'smallest') + ' top number is ' + best2 + '.');
+  }
+  function fShapes() {
+    for (;;) {
+      const [n, d] = pick([[1, 4], [1, 3], [1, 2], [3, 4], [2, 3]]), dims = shuffle([[2, 2], [2, 4], [3, 4], [4, 4], [2, 6], [3, 3], [3, 6], [2, 3]].filter(g => g[0] * g[1] % d === 0)).slice(0, 3);
+      if (dims.length < 3) continue;
+      const t = [0, 1, 2].map(() => Math.random() < 0.5), u = 20; let x = 2, o = ''; const info = [];
+      dims.forEach(([R, C], i) => { const T = R * C, good = T / d * n, sh = t[i] ? good : good + (good + 1 < T && Math.random() < 0.5 ? 1 : -1);
+        if (sh < 1) t[i] = null; o += cellGrid(R, C, randomCells(R, C, sh), u, x, 2) + '<text x="' + (x + C * u / 2) + '" y="' + (4 * u + 22) + '" text-anchor="middle">' + 'XYZ'[i] + '</text>'; info.push('XYZ'[i] + ' has ' + sh + ' of ' + T + ' shaded' + (t[i] ? ', which is ' + fr(n, d) : ', but ' + fr(n, d) + ' of ' + T + ' is ' + good)); x += C * u + 16; });
+      if (t.includes(null)) continue;
+      return Qn('Same fraction', 'Here are three shapes, X, Y and Z, each made of equal squares.' + svg(x - 12, 4 * u + 28, o) + 'Which of the shapes has/have exactly ' + fr(n, d) + ' shaded?', claimOpts(t, ['X', 'Y', 'Z']),
+        'For each shape, count the shaded squares and the total squares.', info.join('. ') + '.');
+    }
+  }
+  function fWhole() {
+    const d = pick([3, 4, 5, 6]); let n; do { n = rnd(2, d - 1); } while (gcd(n, d) > 1); const unit = rnd(2, 6), part = n * unit, whole = d * unit;
+    return Qn('Find the whole', fr(n, d) + ' of a squad is <b>' + part + '</b> players.<br>How many players are in the whole squad?',
+      mkOpts(whole, [{ v: unit, msg: 'That is one part out of ' + d + '. The whole squad is ' + d + ' parts.' }, { v: part * d, msg: part + ' players is ' + n + ' parts, not one part. Find one part first.' }, { v: part + d }, { v: part + unit }], num, unit),
+      'How many players are in one of the ' + d + ' equal parts?', part + ' ÷ ' + n + ' = ' + unit + ' players in each part. The whole squad is ' + d + ' parts: ' + d + ' × ' + unit + ' = ' + whole + '.');
+  }
+  function fLeft() {
+    const [d1, d2, even] = pick([[3, 2, false], [4, 3, true], [2, 3, true]]), R = even ? 2 * rnd(2, 5) : rnd(3, 8), X = R * d2 / (d2 - 1), N = X * d1 / (d1 - 1);
+    return Qn('Fractions backwards', 'Jo eats ' + fr(1, d1) + ' of a bag of grapes. Then Sam eats ' + fr(1, d2) + ' <b>of what is left</b>. Now there are <b>' + R + '</b> grapes.<br>How many grapes were in the bag at the start?',
+      mkOpts(N, [{ v: X, msg: 'That is how many were left after Jo. Keep going back.' }, { v: R * d1 * d2 / (d1 * d2 - d1 - d2), msg: 'Sam eats a fraction of what is left, not of the whole bag.' }, { v: R * d1 }, { v: N + R }], num, R),
+      'Work backwards. If Sam ate ' + fr(1, d2) + ', what fraction did he leave?', 'Sam left ' + fr(d2 - 1, d2) + ' of what he found, so before Sam there were ' + X + '. Jo left ' + fr(d1 - 1, d1) + ' of the bag, so the bag had ' + N + ' grapes.');
+  }
+
+  /* ---------- Edges and Insides: perimeter and area ---------- */
+  function lShape(W, H, w, h) {
+    const u = Math.floor(190 / Math.max(W, H)), x0 = 46, y0 = 26, X = v => x0 + v * u, Y = v => y0 + v * u;
+    const pts = [[0, 0], [W - w, 0], [W - w, h], [W, h], [W, H], [0, H]].map(p => X(p[0]) + ',' + Y(p[1])).join(' ');
+    return svg(W * u + 100, H * u + 56, '<polygon class="shape" points="' + pts + '"/>' +
+      '<text x="' + X(W / 2) + '" y="' + (Y(H) + 18) + '" text-anchor="middle">' + W + ' cm</text><text x="' + (x0 - 8) + '" y="' + (Y(H / 2) + 4) + '" text-anchor="end">' + H + ' cm</text>' +
+      '<text x="' + X(W - w / 2) + '" y="' + (Y(h) - 7) + '" text-anchor="middle">' + w + ' cm</text><text x="' + (X(W - w) + 6) + '" y="' + (y0 + 13) + '">' + h + ' cm</text>');
+  }
+  const lDims = () => { const W = rnd(8, 14), H = rnd(6, 10); return [W, H, rnd(3, W - 4), rnd(3, H - 3)]; };
+  function eWire() {
+    const a = rnd(4, 12), b = a + rnd(3, 15), L = 2 * (a + b);
+    return Qn('Bend the wire', 'A piece of wire <b>' + L + ' cm</b> long is bent to make a rectangle. All of the wire is used. The two short sides are each <b>' + a + ' cm</b>.<br>How long is each long side?',
+      mkOpts(b, [{ v: L - 2 * a, msg: 'That is both long sides together.' }, { v: L / 2, msg: 'That is one short side and one long side together.' }, { v: L - a }, { v: b + a }], v => v + ' cm', 1),
+      'How much wire is left after the two short sides?', 'The two short sides use 2 × ' + a + ' = ' + 2 * a + ' cm. That leaves ' + L + ' − ' + 2 * a + ' = ' + (L - 2 * a) + ' cm for two long sides, so each is ' + b + ' cm.');
+  }
+  function eLperim() {
+    const [W, H, w, h] = lDims(), ans = 2 * (W + H);
+    return Qn('Missing sides', 'All the corners of this shape are right angles.' + lShape(W, H, w, h) + 'What is the perimeter of the shape?',
+      mkOpts(ans, [{ v: W + H + w + h, msg: 'Two sides have no label. Work them out and add them too.' }, { v: W * H - w * h, msg: 'That is the area. Perimeter is the distance around the edge.' }, { v: ans - w - h }, { v: ans + w + h }], v => v + ' cm', 2),
+      'Two sides have no label. The pieces along the top must add up to the bottom.', 'The unlabelled sides are ' + W + ' − ' + w + ' = ' + (W - w) + ' cm and ' + H + ' − ' + h + ' = ' + (H - h) + ' cm. All six sides: ' + [W, H, W - w, h, w, H - h].join(' + ') + ' = ' + ans + ' cm.');
+  }
+  function eLarea() {
+    const [W, H, w, h] = lDims(), ans = W * H - w * h;
+    return Qn('Area with a bite out', 'All the corners of this shape are right angles.' + lShape(W, H, w, h) + 'What is the area of the shape?',
+      mkOpts(ans, [{ v: W * H, msg: 'Take away the missing corner.' }, { v: 2 * (W + H), msg: 'That is the perimeter. Area is the space inside.' }, { v: (W - w) * (H - h), msg: 'That is only part of the shape.' }, { v: W * H - w - h }], v => v + ' cm²', w),
+      'Picture the whole rectangle, then take away the missing corner.', 'The whole rectangle would be ' + W + ' × ' + H + ' = ' + W * H + ' cm². The missing corner is ' + w + ' × ' + h + ' = ' + w * h + ' cm². ' + W * H + ' − ' + w * h + ' = ' + ans + ' cm².');
+  }
+  function eGrid() {
+    const a = rnd(2, 4), b = pick([2, 4]), c = rnd(1, 3), u = 28, C = a + c + 1, R = b + 2, ans = a * b + b * c / 2;
+    const X = v => 2 + v * u, Y = v => 2 + (v + 1) * u, pts = [[0, 0], [a, 0], [a + c, b], [0, b]].map(p => X(p[0]) + ',' + Y(p[1])).join(' ');
+    return Qn('Half squares', 'Each small square on the grid has an area of <b>1 cm²</b>.' + svg(C * u + 4, R * u + 4, cellGrid(R, C, new Set(), u, 2, 2) + '<polygon class="shape" points="' + pts + '"/>') + 'What is the area of the shaded shape?',
+      mkOpts(ans, [{ v: a * b + b * c, msg: 'The sloping part covers only half of those squares.' }, { v: a * b, msg: 'Do not forget the sloping part.' }, { v: ans + 1 }, { v: a * b + c }], v => v + ' cm²', 1),
+      'Split it into a rectangle and a triangle. A triangle is half of a rectangle.', 'The rectangle part is ' + a + ' × ' + b + ' = ' + a * b + ' cm². The sloping part is half of a ' + c + ' by ' + b + ' rectangle: ' + b * c / 2 + ' cm². Together: ' + ans + ' cm².');
+  }
+  function eJoin() {
+    const a = rnd(3, 7), b = a + rnd(2, 6), ans = 4 * a + 2 * b;
+    return Qn('Joined shapes', 'Two identical rectangles are each <b>' + a + ' cm</b> by <b>' + b + ' cm</b>. They are joined along a <b>' + b + ' cm</b> side, with no overlap, to make one bigger rectangle.<br>What is the perimeter of the bigger rectangle?',
+      mkOpts(ans, [{ v: 4 * a + 4 * b, msg: 'The two joined sides are now inside the shape, so they are not part of the edge.' }, { v: 4 * a + 3 * b, msg: 'Both joined sides disappear from the edge, not just one.' }, { v: 2 * a + 2 * b, msg: 'That is the perimeter of one small rectangle.' }, { v: 2 * a * b, msg: 'That is the area.' }], v => v + ' cm', 2),
+      'Sketch it. How long and how wide is the new rectangle?', 'The new rectangle is ' + 2 * a + ' cm by ' + b + ' cm. ' + [2 * a, b, 2 * a, b].join(' + ') + ' = ' + ans + ' cm.');
+  }
+  function eSquare() {
+    const sd = rnd(3, 12), P = 4 * sd;
+    if (Math.random() < 0.5) return Qn('Squares', 'A square has a perimeter of <b>' + P + ' cm</b>.<br>What is its area?',
+      mkOpts(sd * sd, [{ v: 4 * sd * sd, msg: 'A square has 4 equal sides. Divide the perimeter by 4 to find one side.' }, { v: sd, msg: 'That is the side length. Area is side × side.' }, { v: P, msg: 'That is still the perimeter.' }, { v: 2 * sd }], v => v + ' cm²', sd),
+      'How long is one side?', 'One side is ' + P + ' ÷ 4 = ' + sd + ' cm. The area is ' + sd + ' × ' + sd + ' = ' + sd * sd + ' cm².');
+    return Qn('Squares', 'A square has an area of <b>' + sd * sd + ' cm²</b>.<br>What is its perimeter?',
+      mkOpts(P, [{ v: sd, msg: 'That is one side. The perimeter is all four sides.' }, { v: 2 * sd, msg: 'A square has four sides, not two.' }, { v: sd * sd, msg: 'That is still the area.' }, { v: P + 4 }], v => v + ' cm', 4),
+      'What number times itself makes ' + sd * sd + '?', sd + ' × ' + sd + ' = ' + sd * sd + ', so each side is ' + sd + ' cm. The perimeter is 4 × ' + sd + ' = ' + P + ' cm.');
+  }
+  function eSame() {
+    const sd = rnd(6, 12), L = sd + rnd(2, sd - 2), ans = 2 * sd - L;
+    return Qn('Same perimeter', 'A square and a rectangle have the <b>same perimeter</b>. Each side of the square is <b>' + sd + ' cm</b>. The rectangle is <b>' + L + ' cm</b> long.<br>How wide is the rectangle?',
+      mkOpts(ans, [{ v: 4 * sd - 2 * L, msg: 'That is both widths together.' }, { v: 4 * sd - L, msg: 'The rectangle has two long sides.' }, { v: sd }, { v: L - sd }], v => v + ' cm', 1),
+      'Find the perimeter of the square first.', 'The perimeter is 4 × ' + sd + ' = ' + 4 * sd + ' cm. The two long sides use ' + 2 * L + ' cm, leaving ' + (4 * sd - 2 * L) + ' cm for two widths. Each width is ' + ans + ' cm.');
+  }
+  function ePath() {
+    let W = rnd(5, 12), H = rnd(3, 8); if (W === H) W++;
+    const u = Math.floor(170 / (W + 2)), x0 = 30, y0 = 8, ans = 2 * W + 2 * H + 4;
+    const fig = svg((W + 2) * u + 60, (H + 2) * u + 34, '<rect class="shape" x="' + x0 + '" y="' + y0 + '" width="' + (W + 2) * u + '" height="' + (H + 2) * u + '"/><rect class="cell on" x="' + (x0 + u) + '" y="' + (y0 + u) + '" width="' + W * u + '" height="' + H * u + '"/>' +
+      '<text x="' + (x0 + (W + 2) * u / 2) + '" y="' + (y0 + (H + 2) * u + 18) + '" text-anchor="middle">pitch ' + W + ' m by ' + H + ' m, path 1 m wide</text>');
+    return Qn('Path around', 'A rectangular pitch is <b>' + W + ' m</b> by <b>' + H + ' m</b>. A path <b>1 m</b> wide goes all the way around the outside of it.' + fig + 'What is the area of the path?',
+      mkOpts(ans, [{ v: 2 * W + 2 * H, msg: 'Do not forget the four corner squares of the path.' }, { v: (W + 1) * (H + 1) - W * H, msg: 'The path is on both sides, so the big rectangle is 2 m longer and 2 m wider.' }, { v: (W + 2) * (H + 2), msg: 'That is the pitch and the path together.' }, { v: W * H, msg: 'That is the area of the pitch.' }], v => v + ' m²', 2),
+      'Find the area of the big rectangle (pitch and path), then take away the pitch.', 'With the path, the big rectangle is ' + (W + 2) + ' m by ' + (H + 2) + ' m = ' + (W + 2) * (H + 2) + ' m². The pitch is ' + W * H + ' m². ' + (W + 2) * (H + 2) + ' − ' + W * H + ' = ' + ans + ' m².');
+  }
+
+  /* ---------- Shapes, Maps and Clocks ---------- */
+  const tfmt = m => { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60); return (h % 12 || 12) + ':' + String(m % 60).padStart(2, '0') + (h < 12 ? ' am' : ' pm'); };
+  const dfmt = m => { const h = Math.floor(m / 60), r = m % 60; return [h ? h + (h === 1 ? ' hour' : ' hours') : '', r ? r + ' minutes' : ''].filter(Boolean).join(' '); };
+  function sElapsed() {
+    const start = 20 * 60 + rnd(0, 3) * 60 + pick([10, 20, 25, 35, 40, 50]), dur = rnd(6, 11) * 60 + pick([15, 25, 35, 45, 55]), end = start + dur, toMid = 1440 - start;
+    return Qn('Time gaps', 'An overnight coach leaves at <b>' + tfmt(start) + '</b> and arrives at <b>' + tfmt(end) + '</b> the next day.<br>How long is the journey?',
+      mkOpts(dur, [{ v: 1440 - dur, msg: 'That is the gap going the other way around the clock. Count forward from the leaving time.' }, { v: dur + 60, msg: 'Count the whole hours again.' }, { v: dur - 60, msg: 'Count the whole hours again.' }, { v: dur + 720 }], dfmt, 30),
+      'Hop to midnight first. Then count on from midnight.', 'From ' + tfmt(start) + ' to midnight is ' + dfmt(toMid) + '. From midnight to ' + tfmt(end) + ' is ' + dfmt(dur - toMid) + '. Together that is ' + dfmt(dur) + '.');
+  }
+  function sLater() {
+    const start = rnd(5, 9) * 60 + pick([15, 25, 35, 45, 55]), add = pick([150, 250, 350, 400, 450, 500]), ans = start + add;
+    return Qn('Minutes later', 'It is <b>' + tfmt(start) + '</b>.<br>What time will it be in <b>' + add + ' minutes</b>?',
+      mkOpts(ans, [{ v: start + Math.floor(add / 100) * 60 + add % 100, msg: add + ' minutes is not ' + Math.floor(add / 100) + ' hours ' + add % 100 + ' minutes. There are 60 minutes in an hour, not 100.' }, { v: ans + 60 }, { v: ans - 60 }, { v: ans + 30 }], tfmt, 30),
+      'How many whole hours are in ' + add + ' minutes, and how many minutes are left over?', add + ' minutes is ' + dfmt(add) + '. ' + tfmt(start) + ' plus ' + Math.floor(add / 60) + ' hours is ' + tfmt(start + Math.floor(add / 60) * 60) + (add % 60 ? ', and ' + add % 60 + ' more minutes makes ' + tfmt(ans) : '') + '.');
+  }
+  function sCalendar() {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], [M, len, M2] = pick([['March', 31, 'April'], ['April', 30, 'May'], ['June', 30, 'July'], ['August', 31, 'September'], ['October', 31, 'November']]);
+    const d1 = rnd(8, 24), w1 = rnd(0, 6), d2 = rnd(3, 20), gap = len - d1 + d2, ans = (w1 + gap) % 7, first = ans - rnd(0, 4), opts = [0, 1, 2, 3, 4].map(i => days[(first + i + 7) % 7]);
+    return Qn('Calendar', 'The <b>' + ord(d1) + ' of ' + M + '</b> is a <b>' + days[w1] + '</b>. ' + M + ' has ' + len + ' days.<br>What day of the week is the <b>' + ord(d2) + ' of ' + M2 + '</b> in the same year?',
+      listOpts(days[ans], [], {}, opts), 'How many days is it from one date to the other? Every 7 days is the same weekday.',
+      'There are ' + (len - d1) + ' days left in ' + M + ', then ' + d2 + ' days of ' + M2 + ': ' + gap + ' days. That is ' + Math.floor(gap / 7) + ' weeks and ' + gap % 7 + ' days. ' + (gap % 7 ? gap % 7 + ' days after ' + days[w1] + ' is ' + days[ans] + '.' : 'So it is a ' + days[ans] + ' again.'));
+  }
+  function sCompass() {
+    const a = 10 * rnd(2, 6), b = 10 * rnd(1, 4); let c = 10 * rnd(2, 9); if (c === a) c += 10;
+    const net = Math.abs(c - a), dir = c > a ? 'south' : 'north', opp = c > a ? 'north' : 'south', ans = net + ' m ' + dir + ' of the start', total = a + c + 2 * b + ' m ' + dir + ' of the start';
+    const msgs = {}; msgs[net + ' m ' + opp + ' of the start'] = 'Check which is the longer walk: north or south.'; msgs[total] = 'That is how far she walked altogether.'; msgs['back at the start'] = 'East and west cancel out, but north and south do not.';
+    return Qn('Compass walk', 'Noor starts at the centre spot and walks:' + olist([a + ' m north', b + ' m east', c + ' m south', b + ' m west']) + 'Where is she now?',
+      listOpts(ans, [net + ' m ' + opp + ' of the start', total, 'back at the start', (a + c) + ' m ' + dir + ' of the start'], msgs),
+      'Which walks cancel each other out?', 'East ' + b + ' m and west ' + b + ' m cancel out. North ' + a + ' m and south ' + c + ' m leave her ' + net + ' m ' + dir + ' of the start.');
+  }
+  function sMirror() {
+    for (;;) {
+      const R = 5, L = 'ABCDEF', left = shuffle([0, 1, 2, 3, 4].flatMap(r => [0, 1, 2].map(c => [r, c]))).slice(0, rnd(3, 4)), miss = left[0];
+      const ref = (r, c) => L[c] + (R - r), on = new Set(); left.forEach(([r, c], i) => { on.add(r + ',' + c); if (i) on.add(r + ',' + (5 - c)); });
+      const ans = ref(miss[0], 5 - miss[1]), slide = miss[1] + 3, cand = [[miss[0], slide], [R - 1 - miss[0], 5 - miss[1]], [miss[0] - 1, 5 - miss[1]], [miss[0] + 1, 5 - miss[1]], [miss[0], 4 - miss[1]], [miss[0], 6 - miss[1]]];
+      const wrong = []; cand.concat(shuffle([0, 1, 2, 3, 4].flatMap(r => [3, 4, 5].map(c => [r, c])))).forEach(([r, c]) => { const k = ref(r, c); if (r >= 0 && r < R && c >= 3 && c <= 5 && k !== ans && !on.has(r + ',' + c) && !wrong.includes(k) && wrong.length < 4) wrong.push(k); });
+      if (wrong.length < 4) continue;
+      const u = 34, x0 = 24, y0 = 6; let o = cellGrid(R, 6, on, u, x0, y0) + '<line class="dash" x1="' + (x0 + 3 * u) + '" x2="' + (x0 + 3 * u) + '" y1="0" y2="' + (y0 + R * u + 6) + '"/>';
+      for (let c = 0; c < 6; c++) o += '<text x="' + (x0 + c * u + u / 2) + '" y="' + (y0 + R * u + 20) + '" text-anchor="middle">' + L[c] + '</text>';
+      for (let r = 0; r < R; r++) o += '<text x="' + (x0 - 8) + '" y="' + (y0 + r * u + u / 2 + 5) + '" text-anchor="end">' + (R - r) + '</text>';
+      const msgs = {}; if (slide !== 5 - miss[1]) msgs[ref(miss[0], slide)] = 'That slides the square across. A reflection flips it: the same distance from the line, on the other side.';
+      return Qn('Mirror line', 'Lena is shading squares so that the dashed line is a line of symmetry. She has <b>one more square</b> to shade.' + svg(6 * u + 34, R * u + 34, o) + 'Which square must she shade?',
+        listOpts(ans, wrong, msgs, [ans].concat(wrong).sort()), 'Check each shaded square. Does it have a partner on the other side of the line?',
+        'Every shaded square needs a partner the same distance from the dashed line. ' + ref(miss[0], miss[1]) + ' has no partner yet. Its partner is ' + ans + '.');
+    }
+  }
+  function sCubes() {
+    const R = pick([2, 2, 3]), C = pick([2, 3]), h = []; let total = 0;
+    for (let r = 0; r < R; r++) { h.push([]); for (let c = 0; c < C; c++) { const cap = Math.min(r ? h[r - 1][c] : 9, c ? h[r][c - 1] : 9), v = r + c ? Math.max(1, cap - rnd(0, 1)) : rnd(2, 4); h[r].push(v); total += v; } }
+    const H = h[0][0], block = R * C * H, fill = block - total > 1 && Math.random() < 0.5, hs = h.map(row => row.join(', ')).join('; ');
+    if (fill) return Qn('Cubes', 'This solid is built from identical cubes. There are no gaps underneath any cube.' + iso(h) + 'How many <b>more</b> cubes are needed to make it into a solid block that is ' + C + ' cubes long, ' + R + ' cubes wide and ' + H + ' cubes high?',
+      mkOpts(block - total, [{ v: block, msg: 'That is the whole block. Some of the cubes are there already.' }, { v: total, msg: 'That is how many cubes are there already.' }, { v: block - total + 1 }, { v: block - total - 1 }], num, 1),
+      'How many cubes would the full block have? How many are there now?', 'The stacks have heights ' + hs + ', which add up to ' + total + '. The full block has ' + C + ' × ' + R + ' × ' + H + ' = ' + block + ' cubes. ' + block + ' − ' + total + ' = ' + (block - total) + '.');
+    return Qn('Cubes', 'This solid is built from identical cubes. There are no gaps underneath any cube.' + iso(h) + 'How many cubes are in the solid?',
+      mkOpts(total, [{ v: R * C, msg: 'That is how many stacks there are. Some stacks are more than one cube high.' }, { v: total - 1 }, { v: total + 1 }, { v: total + 2 }], num, 1),
+      'Count stack by stack. Some cubes are hidden underneath others.', 'Count each stack’s height: ' + hs + '. They add up to ' + total + '.');
+  }
+  function sFaces() {
+    const n = rnd(3, 7), ans = 4 * n + 2;
+    return Qn('Painted faces', '<b>' + n + '</b> identical cubes are glued in a row. Then the whole shape is dipped in paint.' + iso([Array(n).fill(1)]) + 'How many faces of the small cubes are painted?',
+      mkOpts(ans, [{ v: 6 * n, msg: 'The faces that are glued together cannot be painted.' }, { v: 6 * n - (n - 1), msg: 'Each join hides two faces, one on each cube.' }, { v: 4 * n, msg: 'Do not forget the two end faces.' }, { v: ans + 2 }], num, 2),
+      'How many faces do ' + n + ' separate cubes have? How many are hidden by the glue?', n + ' cubes have ' + 6 * n + ' faces. There are ' + (n - 1) + ' joins, and each hides 2 faces: ' + 2 * (n - 1) + ' hidden. ' + 6 * n + ' − ' + 2 * (n - 1) + ' = ' + ans + '.');
+  }
+  function sRotate() {
+    const tf = { cw: ([r, c]) => [c, 2 - r], ccw: ([r, c]) => [2 - c, r], half: ([r, c]) => [2 - r, 2 - c], flip: ([r, c]) => [r, 2 - c], same: x => x };
+    const draw = (cells, u, cls) => svg(3 * u + 4, 3 * u + 4, cellGrid(3, 3, new Set(cells.map(x => x.join())), u, 2, 2), cls);
+    for (;;) {
+      const cells = shuffle([0, 1, 2].flatMap(r => [0, 1, 2].map(c => [r, c]))).slice(0, rnd(4, 5)), key = k => cells.map(tf[k]).map(x => x.join()).sort().join('|');
+      if (new Set(Object.keys(tf).map(key)).size < 5) continue;
+      const turn = pick(['cw', 'ccw', 'half']), pic = k => draw(cells.map(tf[k]), 16, 'sm'), msgs = {};
+      msgs[pic('flip')] = 'That is a flip (a mirror image), not a turn.'; msgs[pic('same')] = 'That is the tile before it is turned.';
+      if (turn !== 'half') msgs[pic(turn === 'cw' ? 'ccw' : 'cw')] = 'That is a quarter turn the other way.';
+      const words = { cw: 'a quarter turn clockwise', ccw: 'a quarter turn anticlockwise', half: 'a half turn' }, rule = { cw: 'the top row becomes the right-hand column', ccw: 'the top row becomes the left-hand column', half: 'the top row becomes the bottom row, in reverse order' };
+      return Qn('Turns', 'This tile is given <b>' + words[turn] + '</b>.' + draw(cells, 30) + 'What does it look like after the turn?',
+        listOpts(pic(turn), ['cw', 'ccw', 'half', 'flip', 'same'].filter(k => k !== turn).map(pic), msgs),
+        'Follow one square at a time. Where does the top-left square end up?', 'In ' + words[turn] + ', ' + rule[turn] + '. Only one picture matches for every square.');
+    }
+  }
+  function sScale() {
+    const [L, divs] = pick([[100, 4], [100, 5], [200, 5], [200, 4], [20, 4], [60, 4], [80, 5]]), small = L / divs; let k; do { k = rnd(1, 3 * divs - 1); } while (k % divs === 0);
+    const base = Math.floor(k / divs) * L, steps = k % divs, ans = k * small, px = 168 / (3 * divs), x0 = 70, yb = 186; let o = '<rect class="glass" x="' + x0 + '" y="10" width="70" height="' + (yb - 10) + '"/><rect class="water" x="' + (x0 + 1) + '" y="' + (yb - k * px) + '" width="68" height="' + (k * px - 1) + '"/>';
+    for (let i = 0; i <= 3 * divs; i++) { const y = yb - i * px, big = i % divs === 0; o += '<line class="ln" x1="' + x0 + '" x2="' + (x0 + (big ? 22 : 12)) + '" y1="' + y + '" y2="' + y + '"/>' + (big ? '<text x="' + (x0 - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + i / divs * L + ' mL</text>' : ''); }
+    return Qn('Read the scale', 'Only some of the marks on this jug are numbered.' + svg(160, 196, o) + 'How much water is in the jug?',
+      mkOpts(ans, [{ v: base + steps * L / 10, msg: 'Check what each small mark is worth: ' + L + ' ÷ ' + divs + ' = ' + small + '.' }, { v: base + steps, msg: 'Each small mark is worth more than 1 mL.' }, { v: ans + small }, { v: ans - small }], v => v + ' mL', small),
+      'How many steps are there between two numbered marks? What is one step worth?', 'Between numbered marks, ' + L + ' mL is split into ' + divs + ' equal steps, so each step is ' + small + ' mL. The water is ' + steps + ' steps above ' + base + ' mL: ' + base + ' + ' + steps + ' × ' + small + ' = ' + ans + ' mL.');
+  }
+  function sMap() {
+    const per = pick([20, 50, 200, 500]), mm = pick([35, 45, 65, 75, 85, 95, 105, 125]), cm = mm / 10, ans = cm * per;
+    return Qn('Map scale', 'On a map, <b>1 cm</b> stands for <b>' + per + ' m</b> on the ground. On the map, two goalposts are <b>' + mm + ' mm</b> apart.<br>How far apart are they on the ground?',
+      mkOpts(ans, [{ v: mm * per, msg: 'The measurement is in millimetres. ' + mm + ' mm is ' + cm + ' cm.' }, { v: Math.floor(cm) * per, msg: 'Do not drop the half centimetre.' }, { v: ans + per }, { v: ans + per / 2 }], v => v + ' m', per / 2),
+      'Change the millimetres into centimetres first.', mm + ' mm is ' + cm + ' cm. Each centimetre is ' + per + ' m, so ' + cm + ' × ' + per + ' = ' + ans + ' m.');
+  }
+
+  const eq = (lines, sm) => '<div class="big-eq' + (sm ? ' eq-sm' : '') + '">' + lines.join('<br>') + '</div>';
+  const matchStop = (name, line, talk, gens) => ({ name, line, kind: 'match', label: 'Reasoning · 8 questions', stages: ['Coach talk', 'Match', 'Full time'], fns: [talk3, match3, full3], talk, gens });
+  const MORE_STOPS = [
+    matchStop('Rewind', 'Working backwards and number patterns.', [
+      ['Move 1: run the film backwards', eq(['? × 2 + 5 = 25', '25 − 5 = 20', '20 ÷ 2 = 10']), 'To find the start, undo the steps in reverse order. Undo adding by subtracting. Undo multiplying by dividing.'],
+      ['Move 2: count the jumps', eq(['4, 7, 10, 13, …', '10th = 4 + 9 × 3 = 31'], true), 'From the 1st number to the 10th there are only 9 jumps, not 10.'],
+      ['Move 3: find the repeat', eq(['A B C A B C A B C …', '20 ÷ 3 = 6 remainder 2', '20th = 2nd = B'], true), 'When a pattern repeats, divide and look at the remainder. No remainder means it matches the last one in the pattern.']],
+      [rUndo, rNth, rCycle, rBefore, rWhich, rFlags, rDouble, rMachine, rSpend]),
+    matchStop('Check Every Claim', 'Graphs, chance and best-case questions.', [
+      ['Move 1: tick or cross each claim', eq(['1 ✓ &nbsp; 2 ✗ &nbsp; 3 ✓']), 'Decide about every statement on its own first. Only then look for the answer that matches.'],
+      ['Move 2: “more than” needs one extra', eq(['Last week: 30', 'To tie: 30', 'To beat: 31']), 'Words like more than, at least, exactly and smallest change the answer by one. Read them twice.'],
+      ['Move 3: leftovers need a whole one', eq(['14 players, 4 per car', '14 ÷ 4 = 3 remainder 2', '4 cars'], true), 'When things are packed in groups, the leftovers still need a whole extra group.']],
+      [cChance, cNeed, cCrates, cLeast, cGraphClaims, cCoins, cMaxDiff, cParity, cHowMany]),
+    matchStop('Count Them Up', 'Combinations, pairs and careful counting.', [
+      ['Move 1: multiply the choices', eq(['2 shirts × 3 shorts', '= 6 kits']), 'If every choice can go with every other choice, multiply. Do not add.'],
+      ['Move 2: do not count twice', eq(['4 teams', '4 × 3 = 12', '12 ÷ 2 = 6 matches']), 'Each team plays 3 others, but A against B and B against A are the same match. Halve it.'],
+      ['Move 3: count both ends', eq(['Shirts 5 to 9', '5, 6, 7, 8, 9', '9 − 5 + 1 = 5']), 'Subtracting counts the jumps, not the numbers. Add one for the starting number.']],
+      [nKits, nRange, nPairs, nRows, nMult, nVenn, nOrder, nDigitSum, nRoutes]),
+    matchStop('Fair Shares', 'Fractions of shapes and amounts.', [
+      ['Move 1: bottom splits, top counts', eq([fr(3, 4) + ' of 20', '20 ÷ 4 = 5', '3 × 5 = 15']), 'The bottom number says how many equal parts to make. The top number says how many parts to take.'],
+      ['Move 2: “of what is left”', eq(['12 grapes, eat 4', '8 left', 'half of what is left = 4'], true), 'Half of what is left is not half of the whole. Work out what is left first.'],
+      ['Move 3: same amount, different names', eq([fr(2, 8) + ' = ' + fr(1, 4)]), '2 squares out of 8 is the same as 1 out of 4. Count the shaded squares and the total, then simplify.']],
+      [fShade, fNot, fHowMany, fBiggest, fWhole, fTray, fJumps, fShapes, fLeft]),
+    matchStop('Edges and Insides', 'Perimeter and area of tricky shapes.', [
+      ['Move 1: edge or inside?', eq(['Perimeter: walk the edge', 'Area: count the squares'], true), 'Perimeter is a length, in cm or m. Area is a space, in cm² or m². Check which one the question wants.'],
+      ['Move 2: find the missing sides', eq(['10 along the bottom', 'top pieces: 6 + ? = 10'], true), 'When all the corners are right angles, the pieces along the top add up to the bottom. The same goes for left and right.'],
+      ['Move 3: joined edges vanish', eq(['2 squares of side 3', 'apart: 24 around', 'joined: 18 around'], true), 'When shapes are joined, the edges that touch are inside the new shape. They are no longer part of the perimeter.']],
+      [eWire, eSquare, eLperim, eLarea, eJoin, eGrid, eSame, ePath]),
+    matchStop('Shapes, Maps and Clocks', 'Cubes, turns, mirrors, time and scales.', [
+      ['Move 1: hop along the clock', eq(['10:40 pm → 11:00 pm is 20 min', '11:00 pm → 6:00 am is 7 hours', '6:00 am → 6:15 am is 15 min'], true), 'For time gaps, hop to the next hour, count the whole hours, then add the minutes at the end.'],
+      ['Move 2: a mirror flips, a turn spins', eq(['Mirror: same distance, other side', 'Quarter turn: top row becomes a side column'], true), 'Follow one square at a time and check where it lands.'],
+      ['Move 3: what is one small mark worth?', eq(['0 to 100 in 4 steps', 'each step = 25']), 'On a scale, graph or ruler, work out the value of one small step before you read anything.']],
+      [sLater, sElapsed, sScale, sCompass, sMap, sCalendar, sFaces, sCubes, sMirror, sRotate])
+  ];
+
   const STOPS = [
     { name: 'Passing Partners', line: 'Find two numbers that make a round number.', fns: [warmup, kickabout, replay, drills, foul, card],
       front: '<p class="eg">48 + 37 + 52<br>= (48 + 52) + 37<br>= 100 + 37</p><p>Find two numbers that make a round number. Add them first.</p>',
@@ -967,8 +1511,9 @@ button.shirt:hover { transform: translateY(-3px); }
       rear: '<span class="tag">The story</span><p>A schoolboy called Carl Gauss is said to have added every number from 1 to 100 this way, in moments.</p><p>1 + 100 = 101. There are 50 pairs. 50 × 101 = 5050.</p><p><b>Odd squad?</b> One player is left in the middle. Add them on at the end.</p>',
       use: 'Use this move when numbers go up in even steps.' },
     { name: 'For Every', line: 'Scaling, sharing and best-price questions.', kind: 'match', label: 'Reasoning · 8 questions',
-      stages: ['Coach talk', 'Match', 'Full time'], fns: [talk3, match3, full3] }
-  ];
+      stages: ['Coach talk', 'Match', 'Full time'], fns: [talk3, match3, full3], talk: TALK_FE, gens: MATCH_Q }
+  ].concat(MORE_STOPS);
+  if (location.hash === '#test') window.__stops = STOPS;
 
   home();
 })();
