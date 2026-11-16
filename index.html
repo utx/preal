@@ -140,8 +140,8 @@ button.shirt:hover { transform: translateY(-3px); }
 
 .track { display: flex; align-items: center; gap: 8px; }
 .lane { position: relative; flex: 1; height: 34px; border-radius: 17px; background: var(--card); border: 2px solid var(--line);
-  background-image: repeating-linear-gradient(90deg, transparent 0 calc(100% / 4 - 2px), var(--line) calc(100% / 4 - 2px) calc(100% / 4)); }
-.ball { position: absolute; top: 1px; left: calc(var(--p) / 4 * (100% - 30px)); font-size: 24px; line-height: 28px; width: 30px; text-align: center; transition: left .6s cubic-bezier(.3,1.3,.5,1); }
+  background-image: repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--g, 4) - 2px), var(--line) calc(100% / var(--g, 4) - 2px) calc(100% / var(--g, 4))); }
+.ball { position: absolute; top: 1px; left: calc(var(--p) / var(--g, 4) * (100% - 30px)); font-size: 24px; line-height: 28px; width: 30px; text-align: center; transition: left .6s cubic-bezier(.3,1.3,.5,1); }
 .net { width: 40px; height: 40px; border: 3px solid var(--ink); border-left-width: 5px; border-radius: 4px;
   background-image: repeating-linear-gradient(0deg, transparent 0 6px, var(--line) 6px 8px), repeating-linear-gradient(90deg, transparent 0 6px, var(--line) 6px 8px); }
 .net.hit { animation: shake .5s; background-color: var(--kit); }
@@ -188,6 +188,26 @@ button.shirt:hover { transform: translateY(-3px); }
 .pair b { font-family: var(--display); font-weight: 400; font-size: 20px; margin-left: 6px; }
 .opts.three { grid-template-columns: repeat(3, 1fr); }
 .opts.words .opt { font-size: 22px; }
+.grouplabel { font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.qtext { font-size: 19px; font-weight: 700; line-height: 1.5; }
+.qtext b { font-family: var(--display); font-weight: 400; font-size: 1.1em; }
+.qlist { margin: 8px 0; padding-left: 24px; display: grid; gap: 4px; }
+.mopts { display: grid; gap: 10px; }
+.mopt { display: flex; gap: 12px; align-items: center; text-align: left; border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 10px 14px; min-height: 56px; font-weight: 800; font-size: 18px; }
+.mopt i { flex: none; font-style: normal; font-family: var(--display); width: 34px; height: 34px; border-radius: 50%; background: var(--info-bg); display: grid; place-items: center; }
+.mopt span { min-width: 0; }
+.mopt.out { opacity: .45; }
+.mopt.wrong { animation: shake .35s; }
+.mopt.right { background: var(--good-bg); border-color: var(--good); color: var(--good); opacity: 1; }
+.shares { position: relative; display: grid; gap: 10px; justify-content: center; }
+.shares div { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.shares span { width: 44px; }
+.shares i { width: 40px; height: 40px; border: 3px solid var(--on-pitch); border-radius: 8px; }
+.results { display: grid; gap: 8px; }
+.res { display: flex; justify-content: space-between; gap: 12px; align-items: center; border: 2px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px 14px; font-weight: 700; }
+.res b { font-size: 14px; white-space: nowrap; }
+.res.first b, .res.tip b { color: var(--good); }
+.res.missed b { color: var(--foul); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 <!--/page-->
@@ -299,8 +319,9 @@ button.shirt:hover { transform: translateY(-3px); }
     S.stage = i; clear();
     $('#steps').hidden = i < 0;
     if (i >= 0) {
-      $('#stageName').textContent = STAGES[i];
-      $('#dots').innerHTML = STAGES.map((_, k) => '<i class="' + (k < i ? 'done' : k === i ? 'now' : '') + '"></i>').join('');
+      const names = STOPS[S.stop].stages || STAGES;
+      $('#stageName').textContent = names[i];
+      $('#dots').innerHTML = names.map((_, k) => '<i class="' + (k < i ? 'done' : k === i ? 'now' : '') + '"></i>').join('');
     }
     STOPS[S.stop].fns[i]();
     window.scrollTo(0, 0);
@@ -311,17 +332,21 @@ button.shirt:hover { transform: translateY(-3px); }
   function home() {
     S = { stage: -1 }; clear(); $('#steps').hidden = true;
     $('#brandSmall').textContent = 'Pre-season training'; $('#brandName').textContent = 'Training Ground';
-    stageEl.innerHTML = '<div class="home"><h1>Pick today’s training.</h1><div class="menu">' + STOPS.map((st, n) => {
+    const item = (st, n) => {
       const b = best(n);
       const mark = b ? '<span class="stopmark" aria-label="' + b + ' out of 3 stars">' + [1, 2, 3].map(k => '<span class="' + (k <= b ? '' : 'off') + '">★</span>').join('') + '</span>' : '<span class="stopmark new">New</span>';
-      return '<button class="stop" data-n="' + n + '"><span class="stopno">Stop ' + (n + 1) + '</span><span class="stopname">' + st.name + '</span><span class="stopline">' + st.line + '</span>' + mark + '</button>';
-    }).join('') + '</div><p class="muted grown">For grown-ups: each stop takes about 5 minutes and has no timer. Stop 1 is reordering an addition to make round numbers. Stop 2 is adding a run of numbers by pairing the first with the last.</p></div>';
-    $('.menu').onclick = e => { const b = e.target.closest('.stop'); if (b) start(+b.dataset.n); };
+      return '<button class="stop" data-n="' + n + '"><span class="stopno">' + (st.label || 'Stop ' + (n + 1)) + '</span><span class="stopname">' + st.name + '</span><span class="stopline">' + st.line + '</span>' + mark + '</button>';
+    };
+    const list = kind => STOPS.map((st, n) => (st.kind === 'match') === (kind === 'match') ? item(st, n) : '').join('');
+    stageEl.innerHTML = '<div class="home"><h1>Pick today’s training.</h1><p class="grouplabel">Match practice</p><div class="menu">' + list('match') + '</div>' +
+      '<p class="grouplabel">Skill drills</p><div class="menu">' + list('drill') + '</div>' +
+      '<p class="muted grown">For grown-ups: match practice is eight reasoning questions with five answer choices, in rising difficulty, with new numbers every time. Nothing is timed, but the time taken is shown at the end. Skill drills are short lessons on one mental-arithmetic move each.</p></div>';
+    $('.home').onclick = e => { const b = e.target.closest('.stop'); if (b) start(+b.dataset.n); };
     window.scrollTo(0, 0);
   }
   function start(n) {
     S = { stop: n, clean: 0, foulClean: 0 };
-    $('#brandSmall').textContent = 'Pre-season training · Stop ' + (n + 1); $('#brandName').textContent = STOPS[n].name;
+    $('#brandSmall').textContent = STOPS[n].kind === 'match' ? 'Match practice' : 'Pre-season training · Stop ' + (n + 1); $('#brandName').textContent = STOPS[n].name;
     setStage(0);
   }
   $('#menuBtn').onclick = home;
@@ -543,8 +568,8 @@ button.shirt:hover { transform: translateY(-3px); }
       '<button class="trick" id="trick">' + front + '</button>';
     $('#trick').onclick = function () { back = !back; this.classList.toggle('back', back); this.innerHTML = back ? rear : front; };
     say('You earned a trick card. ' + st.use, 'good');
-    if (STOPS[n + 1]) nextBtn('Next stop: ' + STOPS[n + 1].name, () => start(n + 1));
-    nextBtn('Back to the menu', home, !!STOPS[n + 1]);
+    if (STOPS[n + 1] && STOPS[n + 1].kind !== 'match') nextBtn('Next stop: ' + STOPS[n + 1].name, () => start(n + 1));
+    nextBtn('Back to the menu', home, !!(STOPS[n + 1] && STOPS[n + 1].kind !== 'match'));
   }
 
   /* =====================================================================
@@ -735,6 +760,203 @@ button.shirt:hover { transform: translateY(-3px); }
     };
   }
 
+  /* =====================================================================
+     MATCH PRACTICE: FOR EVERY. Proportional reasoning, five answer choices.
+     Every question is generated, so the numbers change each time.
+     ===================================================================== */
+  const money = v => '$' + (v % 1 ? v.toFixed(2) : v);
+  // Builds five distinct choices in rising order. cands are tempting wrong answers, each with its own explanation.
+  function mkOpts(ans, cands, fmt, step, half) {
+    const ok = v => v > 0 && Number.isFinite(v) && (half ? (v * 2) % 1 === 0 : v % 1 === 0);
+    const seen = new Map([[ans, null]]), pool = [];
+    cands.forEach(c => { if (c && ok(c.v) && c.v !== ans && !pool.some(x => x.v === c.v)) pool.push(c); });
+    // Aim the right answer at a random position so it is not always the biggest or smallest choice.
+    const target = rnd(0, 4), low = pool.filter(c => c.v < ans).slice(0, target), high = pool.filter(c => c.v > ans).slice(0, 4 - low.length);
+    low.concat(high).forEach(c => seen.set(c.v, c.msg || null));
+    const count = below => [...seen.keys()].filter(v => below ? v < ans : v > ans).length;
+    for (let k = 1; count(true) < target && ans - k * step > 0 && seen.size < 5; k++) if (!seen.has(ans - k * step)) seen.set(ans - k * step, null);
+    for (let k = 1; seen.size < 5 && k < 40; k++) if (!seen.has(ans + k * step)) seen.set(ans + k * step, null);
+    const vals = [...seen.keys()].sort((x, y) => x - y), msgs = {};
+    vals.forEach(v => { if (seen.get(v)) msgs[fmt(v)] = seen.get(v); });
+    return { opts: vals.map(fmt), ans: fmt(ans), msgs };
+  }
+  function qUnit() {
+    const n = pick([3, 4, 6]), u = pick([4, 6, 7, 8, 9]); let m; do { m = pick([5, 7, 9, 11]); } while (m <= n);
+    const c = n * u;
+    return Object.assign(mkOpts(u * m, [
+      { v: c + (m - n), msg: 'That adds $1 for each extra bib. A bib costs more than $1.' },
+      { v: u, msg: 'That is the cost of one bib. The question asks for ' + m + '.' },
+      { v: u * (m - n), msg: 'That is the cost of only the extra ' + (m - n) + ' bibs.' },
+      { v: c + u, msg: 'That is the cost of ' + (n + 1) + ' bibs.' }], money, u), {
+      skill: 'Find one first', tip: 'Find the cost of one bib first.',
+      html: 'A club buys <b>' + n + '</b> training bibs for <b>$' + c + '</b>. Every bib costs the same.<br>How much do <b>' + m + '</b> bibs cost?',
+      why: 'One bib costs $' + c + ' ÷ ' + n + ' = $' + u + '. So ' + m + ' bibs cost ' + m + ' × $' + u + ' = $' + u * m + '.' });
+  }
+  function qPattern() {
+    const r = pick([2, 3, 4]), b = pick([3, 5].filter(x => x !== r)), reps = rnd(4, 7), B = b * reps, ans = (r + b) * reps;
+    return Object.assign(mkOpts(ans, [
+      { v: r * reps, msg: 'That is only the green stripes. The question asks for all the stripes.' },
+      { v: B + r, msg: 'The pattern is knitted ' + reps + ' times, so there are more than ' + r + ' green stripes.' },
+      { v: reps, msg: 'That is how many times the pattern is knitted.' },
+      { v: (r + b) * b }], v => String(v), r + b), {
+      skill: 'Repeating pattern', tip: 'How many times was the whole pattern knitted?',
+      html: 'A scarf is knitted in a repeating pattern: <b>' + r + '</b> green stripes, then <b>' + b + '</b> gold stripes, over and over. The whole pattern is knitted each time.<br>The finished scarf has <b>' + B + '</b> gold stripes.<br>How many stripes does it have altogether?',
+      why: B + ' gold stripes ÷ ' + b + ' = ' + reps + ' repeats. Each repeat has ' + r + ' + ' + b + ' = ' + (r + b) + ' stripes. ' + reps + ' × ' + (r + b) + ' = ' + ans + '.' });
+  }
+  function qTimes() {
+    const k = pick([2, 3, 4]), j = rnd(4, 9), T = (k + 1) * j;
+    return Object.assign(mkOpts(k * j, [
+      { v: j, msg: 'That is Jon’s number. Mia scored more.' },
+      { v: T / k, msg: 'Splitting into ' + k + ' shares forgets Jon’s own share.' },
+      { v: T / 2, msg: 'They did not score the same number.' },
+      { v: T - k, msg: '“' + k + ' times as many” does not mean “' + k + ' more”.' }], v => String(v), k), {
+      skill: 'Times as many', tip: 'Draw Jon as 1 box and Mia as ' + k + ' boxes. How many boxes altogether?',
+      html: 'Mia and Jon scored <b>' + T + '</b> goals between them this season.<br>Mia scored <b>' + k + ' times</b> as many goals as Jon.<br>How many goals did Mia score?',
+      why: 'Jon is 1 share and Mia is ' + k + ' shares, so there are ' + (k + 1) + ' equal shares. ' + T + ' ÷ ' + (k + 1) + ' = ' + j + ' in each share. Mia has ' + k + ' × ' + j + ' = ' + k * j + '.' });
+  }
+  function qJug() {
+    let L, d, k, m;
+    do { L = pick([100, 150, 200]); d = pick([15, 20, 25, 30]); k = pick([2, 3, 4]); m = pick([3, 4, 5, 6]); } while (L === 100 && k === 2 && d === 25);
+    const L1 = L + k * d, ans = L1 + m * d;
+    return Object.assign(mkOpts(ans, [
+      { v: L1 * (k + m) / k, msg: 'That scales the whole water level. The water that was there at the start does not grow.' },
+      { v: L + m * d, msg: 'The first ' + k + ' stones are still in the jug.' },
+      { v: m * d, msg: 'That is how much the level rises. Add it to the level now.' },
+      { v: L1 + k * d, msg: 'That adds ' + k + ' more stones. He adds ' + m + ' more.' }], v => v + ' mL', d), {
+      skill: 'Rising water', tip: 'How much did the water rise for the first ' + k + ' stones? So how much for one stone?',
+      html: 'A jug has <b>' + L + ' mL</b> of water in it. Kai drops in <b>' + k + '</b> identical stones and they sink. The water level rises to <b>' + L1 + ' mL</b>.<br>He drops in <b>' + m + '</b> more stones.<br>What is the new water level?',
+      why: 'The level rose ' + L1 + ' − ' + L + ' = ' + k * d + ' mL for ' + k + ' stones, so each stone adds ' + d + ' mL. ' + m + ' more stones add ' + m * d + ' mL. ' + L1 + ' + ' + m * d + ' = ' + ans + ' mL.' });
+  }
+  function qTwo() {
+    const [a, b, X] = pick([[10, 5, 20], [12, 6, 36], [10, 5, 30], [10, 5, 40], [12, 4, 24], [8, 4, 16]]);
+    const j = X / a, s = X / b, a2 = a / 2, b2 = b * pick([2, 3]), ans = a2 * j + b2 * s;
+    return Object.assign(mkOpts(ans, [
+      { v: X, msg: 'The groups have changed size, so the total changes too.' },
+      { v: 2 * X, msg: 'Work out each group on its own. A junior and a senior do not drink the same amount.' },
+      { v: b2 * s, msg: 'That is only the seniors.' },
+      { v: (a2 + b2) * j, msg: 'A senior drinks more than a junior.' },
+      { v: a2 * j, msg: 'That is only the juniors.' }], v => v + ' L', s), {
+      skill: 'Two groups', tip: 'Find what one junior drinks. Then find what one senior drinks.',
+      html: '<b>' + a + '</b> junior players drink <b>' + X + ' litres</b> of water at training.<br><b>' + b + '</b> senior players also drink <b>' + X + ' litres</b>.<br>How much water do <b>' + a2 + '</b> juniors and <b>' + b2 + '</b> seniors need?',
+      why: 'One junior drinks ' + X + ' ÷ ' + a + ' = ' + j + ' L. One senior drinks ' + X + ' ÷ ' + b + ' = ' + s + ' L. ' + a2 + ' × ' + j + ' = ' + a2 * j + ' and ' + b2 + ' × ' + s + ' = ' + b2 * s + '. Together that is ' + ans + ' L.' });
+  }
+  function qValue() {
+    const set = pick([{ s: 4, ps: 3, L: 10, pl: 6.5, Ns: [24, 28, 32, 34] }, { s: 2, ps: 1.5, L: 12, pl: 7, Ns: [16, 20, 26, 28] }]), N = pick(set.Ns);
+    let best = null; const others = [];
+    for (let jb = 0; jb * set.L <= N; jb++) {
+      const rest = N - jb * set.L; if (rest % set.s) continue;
+      const i = rest / set.s, cost = i * set.ps + jb * set.pl;
+      others.push(cost); if (!best || cost < best.cost) best = { i, jb, cost };
+    }
+    const cands = [];
+    if (N % set.s === 0) cands.push({ v: N / set.s * set.ps, msg: 'All small packs gives exactly ' + N + ', but big packs are cheaper for each cone.' });
+    if (N % set.L) cands.push({ v: Math.ceil(N / set.L) * set.pl, msg: 'That buys more than ' + N + ' cones. She needs exactly ' + N + '.' });
+    others.forEach(c => cands.push({ v: c, msg: 'That makes exactly ' + N + ' cones, but there is a cheaper way.' }));
+    return Object.assign(mkOpts(best.cost, cands, money, 0.5, true), {
+      skill: 'Best price', tip: 'Which pack is cheaper for each cone? Use as many of those as you can and still land exactly on ' + N + '.',
+      html: 'Cones are sold in packs. A small pack has <b>' + set.s + '</b> cones and costs <b>' + money(set.ps) + '</b>. A big pack has <b>' + set.L + '</b> cones and costs <b>' + money(set.pl) + '</b>.<br>A coach needs <b>exactly ' + N + '</b> cones.<br>What is the lowest price she can pay?',
+      why: 'Big packs are cheaper for each cone. ' + best.jb + ' big and ' + best.i + ' small make exactly ' + N + ' cones. ' + best.jb + ' × ' + money(set.pl) + ' + ' + best.i + ' × ' + money(set.ps) + ' = ' + money(best.cost) + '.' });
+  }
+  function qStatements() {
+    const n = pick([4, 6, 8]), pb = pick([2, 3]), po = pick([2, 3, 4].filter(x => x !== pb)), b = n * pb, o = n * po;
+    const t = [Math.random() < 0.5, Math.random() < 0.5, Math.random() < 0.5];
+    const st = ['For ' + 2 * n + ' players she packs ' + (t[0] ? 2 * b : b + n) + ' bottles.',
+      'For ' + n / 2 + ' players she packs ' + (t[1] ? o / 2 : o - n / 2) + ' orange slices.',
+      'For ' + (n + 2) + ' players she packs ' + (t[2] ? b + 2 * pb : b + 2) + ' bottles.'];
+    const label = set => !set.length ? 'none of them' : set.length === 3 ? 'statements 1, 2 and 3' : set.length === 1 ? 'statement ' + set[0] + ' only' : 'statements ' + set[0] + ' and ' + set[1] + ' only';
+    const all = [[], [1], [2], [3], [1, 2], [1, 3], [2, 3], [1, 2, 3]], right = [1, 2, 3].filter(i => t[i - 1]);
+    const chosen = [right].concat(shuffle(all.filter(x => x.join() !== right.join())).slice(0, 4)).sort((x, y) => x.length - y.length || x.join().localeCompare(y.join()));
+    const facts = [2 * n + ' players need ' + 2 * b + ' bottles', n / 2 + ' players need ' + o / 2 + ' orange slices', (n + 2) + ' players need ' + (b + 2 * pb) + ' bottles'];
+    return { skill: 'Check each claim', opts: chosen.map(label), ans: label(right), msgs: {},
+      tip: 'Find what one player gets. Then check each statement, one at a time.',
+      html: 'For a squad of <b>' + n + '</b> players, the kit manager packs <b>' + b + '</b> bottles and <b>' + o + '</b> orange slices. Every player gets the same.<br>Which of these statements is/are correct?<ol class="qlist"><li>' + st.join('</li><li>') + '</li></ol>',
+      why: 'One player gets ' + pb + ' bottles and ' + po + ' orange slices. ' + facts.map((f, i) => 'Statement ' + (i + 1) + ' is ' + (t[i] ? 'right' : 'wrong') + ': ' + f + '.').join(' ') };
+  }
+  function qBags() {
+    const [p, q] = pick([[2, 3], [3, 5], [3, 4]]), fw = q, bw = p;   // p footballs weigh the same as q boots
+    const x = 2 * p + rnd(0, 3), y = q + rnd(1, 4);
+    const base = [x, y], eq1 = [x - p, y + q], eq2 = [x + p, y - q], dA = [x - 1, y + 1], dB = [x - p, y + p];
+    const bags = pick([[base, eq1, eq2], [base, eq1, dA], [base, dA, eq1], [dA, base, eq1], [base, dA, dB]]);
+    const w = bags.map(g => g[0] * fw + g[1] * bw);
+    const opts = ['All three bags weigh the same.', 'Bags 1 and 2 weigh the same. Bag 3 is different.', 'Bags 1 and 3 weigh the same. Bag 2 is different.', 'Bags 2 and 3 weigh the same. Bag 1 is different.', 'All three bags have different weights.'];
+    const ans = w[0] === w[1] && w[1] === w[2] ? 0 : w[0] === w[1] ? 1 : w[0] === w[2] ? 2 : w[1] === w[2] ? 3 : 4;
+    return { skill: 'Equal weights', opts, ans: opts[ans], msgs: {},
+      tip: 'Pretend a football weighs ' + fw + ' and a boot weighs ' + bw + '. Then add up each bag.',
+      html: '<b>' + p + '</b> footballs weigh the same as <b>' + q + '</b> boots.<br>Three kit bags are packed:<ul class="qlist">' + bags.map((g, i) => '<li>Bag ' + (i + 1) + ': ' + g[0] + ' footballs and ' + g[1] + ' boots</li>').join('') + '</ul>Which statement is correct?',
+      why: 'Pretend a football weighs ' + fw + ' and a boot weighs ' + bw + ', because ' + p + ' × ' + fw + ' = ' + q + ' × ' + bw + '. ' + bags.map((g, i) => 'Bag ' + (i + 1) + ' weighs ' + g[0] + ' × ' + fw + ' + ' + g[1] + ' × ' + bw + ' = ' + w[i] + '.').join(' ') };
+  }
+  function qChain() {
+    const [a, b, c, d, ms] = pick([[5, 2, 4, 3, [2, 3, 4, 5]], [3, 4, 2, 5, [2, 4, 6]], [7, 3, 3, 2, [3, 4, 5, 6]], [6, 5, 5, 4, [2, 3, 4, 5]]]);
+    const m = pick(ms), D = d * m, cards = c * m, ans = a * cards / b;
+    return Object.assign(mkOpts(ans, [
+      { v: cards, msg: 'That is how many cards ' + D + ' badges are worth. Now change the cards into stickers.' },
+      { v: D, msg: 'A sticker and a badge are not worth the same.' },
+      { v: a * m }, { v: ans + a }], v => v + ' stickers', a), {
+      skill: 'Swap chain', tip: 'Go one step at a time. Change the badges into cards first, then the cards into stickers.',
+      html: 'At the club swap shop:<ul class="qlist"><li><b>' + a + '</b> stickers are worth <b>' + b + '</b> cards</li><li><b>' + c + '</b> cards are worth <b>' + d + '</b> badges</li></ul>How many stickers are <b>' + D + '</b> badges worth?',
+      why: D + ' badges is ' + m + ' lots of ' + d + ' badges, so it is worth ' + m + ' × ' + c + ' = ' + cards + ' cards. ' + cards + ' cards is ' + cards / b + ' lots of ' + b + ' cards, so it is worth ' + cards / b + ' × ' + a + ' = ' + ans + ' stickers.' });
+  }
+  const MATCH_Q = [qUnit, qPattern, qTimes, qJug, qTwo, qValue, qStatements, qBags, qChain];
+  if (location.hash === '#test') window.__matchQ = MATCH_Q;
+
+  function talk3() {
+    const steps = [
+      ['Move 1: find one first', '<div class="big-eq">4 tickets = $36<br>1 ticket = $9<br>7 tickets = $63</div>',
+        'When things cost the same each, work out one of them. Then you can work out any number.'],
+      ['Move 2: draw the shares', '<div class="shares"><div><span>Ben</span><i></i></div><div><span>Ana</span><i></i><i></i><i></i></div></div>',
+        'Ana has 3 times as many as Ben, and they have 20 together. That is 4 equal boxes. 20 ÷ 4 = 5 in each box, so Ana has 15.'],
+      ['Move 3: only scale what changes', '<div class="big-eq">100 mL → 140 mL<br>with 2 stones</div>',
+        'The stones made the water rise by 40 mL, so each stone adds 20 mL. The 100 mL at the start does not grow. Watch for this trap!']
+    ];
+    let i = 0;
+    const show = () => {
+      clear();
+      stageEl.innerHTML = '<div class="who"><span class="avatar" aria-hidden="true">M</span><p class="prompt">' + steps[i][0] + '</p></div>' +
+        '<div class="pitch">' + steps[i][1] + '<p class="caption">' + steps[i][2] + '</p></div><p class="muted">Coach talk ' + (i + 1) + ' of ' + steps.length + '</p>';
+      nextBtn(i ? 'Back' : 'Skip to the match', () => { if (i) { i--; show(); } else setStage(1); }, true);
+      nextBtn(i < steps.length - 1 ? 'Next' : 'Kick off', () => { i++; i < steps.length ? show() : setStage(1); });
+    };
+    show();
+  }
+
+  function match3() {
+    const gens = MATCH_Q.slice(); gens.splice(rnd(1, 3), 1);   // eight of the nine types, easier ones first
+    const R = S.results = [], total = gens.length; S.t0 = Date.now(); let qi = 0;
+    const ask = () => {
+      clear(); const q = gens[qi](); let tries = 0, tipped = false;
+      stageEl.innerHTML = '<div class="track" style="--g:' + total + '" role="img" aria-label="Question ' + (qi + 1) + ' of ' + total + '"><div class="lane"><span class="ball" style="--p:' + qi + '">⚽</span></div><div class="net"></div></div>' +
+        '<p class="level">Question ' + (qi + 1) + ' of ' + total + '</p><div class="qtext">' + q.html + '</div>' +
+        '<div class="mopts">' + q.opts.map((o, i) => '<button class="mopt" data-i="' + i + '"><i>' + 'ABCDE'[i] + '</i><span>' + o + '</span></button>').join('') + '</div>';
+      const tipB = nextBtn('Coach tip', () => { tipped = true; say(q.tip, 'info'); tipB.disabled = true; }, true);
+      const end = res => {
+        R.push({ skill: q.skill, res });
+        stageEl.querySelectorAll('.mopt').forEach(b => { b.disabled = true; if (q.opts[+b.dataset.i] === q.ans) b.classList.add('right'); });
+        after.innerHTML = ''; $('.ball').style.setProperty('--p', qi + 1);
+        nextBtn(qi < total - 1 ? 'Next question' : 'Full time', () => { qi++; qi < total ? ask() : setStage(2); });
+      };
+      $('.mopts').onclick = e => {
+        const b = e.target.closest('.mopt'); if (!b || b.disabled) return; const v = q.opts[+b.dataset.i];
+        if (v === q.ans) { say((tries ? 'Got it on the rebound. ' : pick(['Goal! ', 'Back of the net! ', 'Top corner! '])) + q.why, 'good'); return end(tries ? 'second' : tipped ? 'tip' : 'first'); }
+        tries++; b.classList.add('wrong', 'out'); b.disabled = true;
+        if (tries === 1) say((q.msgs[v] || 'Not that one.') + ' Have one more go.', 'bad');
+        else { say('The answer is ' + 'ABCDE'[q.opts.indexOf(q.ans)] + '. ' + q.why, 'info'); end('missed'); }
+      };
+    };
+    ask();
+  }
+
+  function full3() {
+    const R = S.results, n = S.stop, first = R.filter(r => r.res === 'first' || r.res === 'tip').length;
+    const stars = first >= R.length - 1 ? 3 : first >= R.length - 3 ? 2 : 1;
+    try { if (stars > best(n)) localStorage.setItem('pp-stop' + (n + 1) + '-stars', stars); } catch (e) {}
+    const secs = Math.round((Date.now() - S.t0) / 1000), mark = { first: 'Goal', tip: 'Goal with a tip', second: 'Second try', missed: 'Missed' };
+    stageEl.innerHTML = starRow(stars) + '<h2 style="text-align:center">' + first + ' of ' + R.length + ' scored first time</h2>' +
+      '<div class="results">' + R.map(r => '<div class="res ' + r.res + '"><span>' + r.skill + '</span><b>' + mark[r.res] + '</b></div>').join('') + '</div>' +
+      '<p class="muted">You took ' + Math.floor(secs / 60) + ' min ' + secs % 60 + ' s. A brisk pace for ' + R.length + ' questions like these is about 9 minutes.</p>';
+    nextBtn('Play again with new numbers', () => start(n));
+    nextBtn('Back to the menu', home, true);
+  }
+
   const STOPS = [
     { name: 'Passing Partners', line: 'Find two numbers that make a round number.', fns: [warmup, kickabout, replay, drills, foul, card],
       front: '<p class="eg">48 + 37 + 52<br>= (48 + 52) + 37<br>= 100 + 37</p><p>Find two numbers that make a round number. Add them first.</p>',
@@ -743,7 +965,9 @@ button.shirt:hover { transform: translateY(-3px); }
     { name: 'Pair Up', line: 'Add a whole line-up of numbers in a flash.', fns: [warmup2, kick2, replay2, drills2, foul2, card],
       front: '<p class="eg">1 + 2 + 3 + … + 10<br>first + last = 11<br>5 pairs, so 5 × 11 = 55</p><p>Pair the first with the last. Every pair makes the same total.</p>',
       rear: '<span class="tag">The story</span><p>A schoolboy called Carl Gauss is said to have added every number from 1 to 100 this way, in moments.</p><p>1 + 100 = 101. There are 50 pairs. 50 × 101 = 5050.</p><p><b>Odd squad?</b> One player is left in the middle. Add them on at the end.</p>',
-      use: 'Use this move when numbers go up in even steps.' }
+      use: 'Use this move when numbers go up in even steps.' },
+    { name: 'For Every', line: 'Scaling, sharing and best-price questions.', kind: 'match', label: 'Reasoning · 8 questions',
+      stages: ['Coach talk', 'Match', 'Full time'], fns: [talk3, match3, full3] }
   ];
 
   home();
